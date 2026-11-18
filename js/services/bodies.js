@@ -13,6 +13,9 @@ const toBody = r => ({
   agendaUrl: safe(r.agenda_url),
   watchUrl: safe(r.watch_url),
   commentGuide: r.comment_guide ?? '',
+  placeId: r.place_id ?? '',
+  kind: r.kind ?? 'governing',
+  scheduleText: r.schedule_text ?? '',
 });
 
 const toMeeting = r => ({

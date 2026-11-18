@@ -7,16 +7,18 @@ import { esc } from './lib/dom.js';
 import { friendly } from './lib/supabase.js';
 import { card } from './components/ui.js';
 import * as welcome from './screens/welcome/index.js';
-import * as address from './screens/address/index.js';
+import * as location from './screens/location/index.js';
+import * as place from './screens/place/index.js';
 import * as home from './screens/home/index.js';
 import * as body from './screens/body/index.js';
 import * as item from './screens/item/index.js';
 
 export const routes = [
   { path: '/welcome', need: 'none', screen: welcome },
-  { path: '/address', need: 'profile', screen: address },
+  { path: '/location', need: 'profile', screen: location },
   { path: '/', need: 'ready', screen: home },
   { path: '/body/:id', need: 'ready', screen: body },
+  { path: '/place/:id', need: 'ready', screen: place },
   { path: '/item/:id', need: 'ready', screen: item },
 ];
 
@@ -37,7 +39,7 @@ function allowed(need) {
   if (need === 'none') return true;
   if (!state.me) { go('/welcome'); return false; }
   if (need === 'profile') return true;
-  if (!state.me.bodyIds.length) { go('/address'); return false; }
+  if (!state.me.placeIds.length) { go('/location'); return false; }
   return true;
 }
 

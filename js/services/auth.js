@@ -11,7 +11,7 @@ export async function loadMe() {
   if (!data?.user) return null;
   const row = unwrap(await sb().from('profiles').select('*').eq('id', data.user.id).maybeSingle());
   if (!row) return null;
-  return { id: row.id, nickname: row.nickname, bodyIds: row.body_ids ?? [] };
+  return { id: row.id, nickname: row.nickname, bodyIds: row.body_ids ?? [], placeIds: row.place_ids ?? [] };
 }
 
 export async function createProfile(nickname) {
@@ -26,4 +26,9 @@ export async function saveBodies(userId, bodyIds) {
 
 export async function signOut() {
   await sb().auth.signOut();
+}
+
+// Saves the person's places (geography) and bodies (institutions) in one step.
+export async function saveLocation(userId, { placeIds, bodyIds }) {
+  unwrap(await sb().from('profiles').update({ place_ids: placeIds, body_ids: bodyIds }).eq('id', userId));
 }

@@ -4,7 +4,7 @@ import { createProfile, loadMe } from '../../services/auth.js';
 import { go } from '../../lib/nav.js';
 
 export function render(root) {
-  if (state.me) return go(state.me.bodyIds.length ? '/' : '/address');
+  if (state.me) return go(state.me.placeIds.length ? '/' : '/location');
 
   root.innerHTML = `
     <section class="narrow-col stack">
@@ -34,7 +34,7 @@ export function render(root) {
     try {
       await createProfile(nickname);
       state.me = await loadMe();
-      go('/address');
+      go('/location');
     } catch (err) {
       errorEl.textContent = err.message;
       submit.disabled = false;
