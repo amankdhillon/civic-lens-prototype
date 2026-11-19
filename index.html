@@ -1,37 +1,17 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Civic Lens (Prototype)</title>
-  <meta name="description" content="Prototype: sample data only.">
-  <link rel="stylesheet" href="css/tokens.css">
-  <link rel="stylesheet" href="css/base.css">
-  <link rel="stylesheet" href="css/layout.css">
-  <link rel="stylesheet" href="css/components.css">
-  <link rel="stylesheet" href="css/civic.css">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Civic Lens Prototype</title>
+<link rel="stylesheet" href="css/civic.css">
 </head>
 <body>
-  <noscript><p class="banner">Civic Lens needs JavaScript to run. Turn it on in your browser settings.</p></noscript>
-  <a class="skip-link" href="#app">Skip to content</a>
-  <header class="topbar">
-    <div class="topbar__inner">
-      <a class="brand" href="#/">
-        <svg class="brand__mark" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="10" cy="10" r="6" fill="none" stroke="currentColor" stroke-width="2"/><path d="M14.5 14.5L21 21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-        Civic Lens
-      </a>
-      <span class="pill">Prototype</span>
-      <div class="me" id="me"></div>
-    </div>
-  </header>
-  <p class="banner">Sample data only. Bodies, meetings, and decisions are placeholders.</p>
-  <div class="shell">
-    <nav id="rail" class="rail" aria-label="Main"></nav>
-    <main id="app" class="app-main" tabindex="-1"></main>
-  </div>
-  <p id="status" class="sr-only" role="status" aria-live="polite"></p>
-  <div id="toasts" class="toasts"></div>
-  <div id="modal" class="modal" hidden></div>
-  <script type="module" src="js/app.js"></script>
+<a class="skip" href="#main">Skip to content</a>
+<div id="app"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.8/dist/umd/supabase.js"></script>
+<script src="js/shell/sample-data.js"></script>
+<script src="js/shell/db.js"></script>
+<script src="js/shell/app.js"></script>
 </body>
 </html>

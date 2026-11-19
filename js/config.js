@@ -1,5 +1,5 @@
 // The only file you edit to connect Civic Lens.
-// Use a SEPARATE Supabase project from BallotBridge. The publishable key is public. Row Level Security protects the data.
+// Use a SEPARATE Supabase project for each app. The publishable key is public. Row Level Security protects the data.
 export const SUPABASE_URL = 'https://rvqfgwidcjhfmowxekkh.supabase.co';
 export const SUPABASE_KEY = 'sb_publishable_TduPKAxZQRMOfqHioIEnrw_4HwD1Mra';
 

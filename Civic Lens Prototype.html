@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Civic Lens Prototype</title>
+<style>
+:root{--bg:#f5f6f8;--card:#fff;--line:#e2e5ea;--ink:#1a1d21;--mute:#5b6370;--blue:#2357d6;--ok:#1d7a4a;--warn:#8a5a00;--navw:236px}
+*{box-sizing:border-box}
+body{margin:0;font:15px/1.45 system-ui,-apple-system,sans-serif;color:var(--ink);background:var(--bg)}
+.shell{display:grid;grid-template-columns:var(--navw) 1fr;min-height:100vh;transition:grid-template-columns .2s}
+.shell.closed{grid-template-columns:0 1fr}
+.side{background:#fff;border-right:1px solid var(--line);padding:14px 10px;overflow:hidden;position:sticky;top:0;height:100vh}
+.shell.closed .side{padding:0;border:0}
+.shell.closed .side>*{display:none}
+.brand{font-weight:700;font-size:17px;padding:4px 10px 12px}
+.navbtn{display:block;width:100%;text-align:left;background:none;border:0;border-radius:8px;padding:8px 10px;font:inherit;color:var(--ink);cursor:pointer;margin-bottom:2px}
+.navbtn:hover{background:#eef1f6}
+.navbtn.on{background:var(--blue);color:#fff}
+.sidebox{margin-top:18px;border-top:1px solid var(--line);padding:12px 10px 0}
+.sidebox h2{margin-bottom:6px}
+.tg{display:flex;gap:8px;align-items:flex-start;padding:6px 0;font-size:14px}
+.tg input{margin-top:4px}
+.main{min-width:0}
+header{display:flex;align-items:center;gap:10px;padding:10px 16px;background:#fff;border-bottom:1px solid var(--line);flex-wrap:wrap;position:sticky;top:0;z-index:2}
+header b{font-size:16px}
+.spacer{flex:1}
+.wrap{max-width:900px;margin:0 auto;padding:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:12px}
+button{font:inherit;border:1px solid var(--blue);background:var(--blue);color:#fff;border-radius:8px;padding:6px 12px;cursor:pointer}
+button.ghost{background:#fff;color:var(--blue)}
+input,textarea{font:inherit;border:1px solid #cfd4db;border-radius:8px;padding:8px;width:100%;background:#fff}
+.muted{color:var(--mute);font-size:13px}
+.small{font-size:13px}
+.tag{font-size:11px;border:1px solid #cfd4db;border-radius:5px;padding:1px 6px;color:var(--mute);white-space:nowrap;display:inline-block;margin:2px 4px 2px 0}
+.tag.ok{color:var(--ok);border-color:var(--ok)}
+.tag.no{color:var(--warn);border-color:var(--warn)}
+.tag.final{color:var(--ink);border-color:var(--blue)}
+.row{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:10px 0;border-top:1px solid var(--line)}
+.row:first-of-type{border-top:0}
+h1{font-size:20px;margin:0 0 4px}
+h2{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--mute);margin:0 0 8px}
+details.item{border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin:8px 0;background:#fff}
+details.item summary{cursor:pointer;font-weight:600}
+.post{border-left:2px solid var(--line);padding:4px 0 4px 10px;margin:8px 0}
+.err{color:#b3261e;font-size:13px;min-height:18px}
+footer{padding:12px 16px;color:var(--mute);font-size:12px;text-align:center}
+.signin{max-width:420px;margin:60px auto;padding:0 16px}
+@media(max-width:760px){
+  .shell{grid-template-columns:1fr}
+  .side{position:fixed;z-index:5;width:var(--navw);height:100vh;box-shadow:0 0 20px rgba(0,0,0,.15)}
+  .shell.closed .side{display:none}
+}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const TODAY='2026-11-17';
+
+/* ---------- SAMPLE DATA (San Diego shell). Officeholders and district numbers are seeded for the prototype and must be verified before any public test. ---------- */
+const DIST={
+  'fed-sd':{label:'U.S. House, San Diego County district',rep:'Placeholder (verify)',body:'fed'},
+  'state-sd':{label:'State Senate, San Diego County district',rep:'Placeholder (verify)',body:'state'},
+  'bos-1':{label:'Supervisor, District 1',rep:'Nora Vargas',body:'bos'},
+  'bos-2':{label:'Supervisor, District 2',rep:'Joel Anderson',body:'bos'},
+  'bos-3':{label:'Supervisor, District 3',rep:'Terra Lawson-Remer',body:'bos'},
+  'bos-4':{label:'Supervisor, District 4',rep:'Monica Montgomery Steppe',body:'bos'},
+  'bos-5':{label:'Supervisor, District 5',rep:'Jim Desmond',body:'bos'},
+  'sdcc-1':{label:'Council, District 1',rep:'Joe LaCava',body:'sdcc'},
+  'sdcc-2':{label:'Council, District 2',rep:'Jennifer Campbell',body:'sdcc'},
+  'sdcc-3':{label:'Council, District 3',rep:'Stephen Whitburn',body:'sdcc'},
+  'sdcc-4':{label:'Council, District 4',rep:'Henry Foster III',body:'sdcc'},
+  'sdcc-5':{label:'Council, District 5',rep:'Marni von Wilpert',body:'sdcc'},
+  'sdcc-6':{label:'Council, District 6',rep:'Kent Lee',body:'sdcc'},
+  'sdcc-7':{label:'Council, District 7',rep:'Raul Campillo',body:'sdcc'},
+  'sdcc-8':{label:'Council, District 8',rep:'Vivian Moreno',body:'sdcc'},
+  'sdcc-9':{label:'Council, District 9',rep:'Sean Elo-Rivera',body:'sdcc'},
+  'sdusd-a':{label:'Board, Area A',rep:'Trustee (verify)',body:'sdusd'},
+  'sdusd-b':{label:'Board, Area B',rep:'Trustee (verify)',body:'sdusd'},
+  'sdusd-c':{label:'Board, Area C',rep:'Trustee (verify)',body:'sdusd'},
+  'sdusd-d':{label:'Board, Area D',rep:'Trustee (verify)',body:'sdusd'},
+  'sdusd-e':{label:'Board, Area E',rep:'Trustee (verify)',body:'sdusd'}
+};
+const BODIES={
+  bos:{name:'Board of Supervisors, County of San Diego',about:'Elected supervisors, one per district, set the county budget, run county services, and decide land-use rules in unincorporated areas.',members:['bos-1','bos-2','bos-3','bos-4','bos-5'],meets:true,note:'Sample meeting data.'},
+  sdcc:{name:'San Diego City Council',about:'Nine elected council members, one per district, set the city budget, pass ordinances, and approve city contracts.',members:['sdcc-1','sdcc-2','sdcc-3','sdcc-4','sdcc-5','sdcc-6','sdcc-7','sdcc-8','sdcc-9'],meets:true,note:'Sample meeting data.'},
+  sdusd:{name:'San Diego Unified School District Board of Education',about:'Elected trustees set district policy, approve the budget, and oversee the superintendent.',members:['sdusd-a','sdusd-b','sdusd-c','sdusd-d','sdusd-e'],meets:true,note:'Sample meeting data.'},
+  state:{name:'California State Senate',about:'Senators represent districts of roughly one million people, pass state laws, and approve the state budget.',members:['state-sd'],meets:false,note:'Info page only for now.'},
+  fed:{name:'U.S. House of Representatives',about:'Members represent congressional districts, pass federal laws, and approve federal spending.',members:['fed-sd'],meets:false,note:'Info page only for now.'}
+};
+const I=(id,title,action,summary,result)=>({id,title,action,summary,result});
+const MEETINGS=[
+  {id:'m1',body:'bos',date:'2026-11-10',time:'9:00 a.m.',title:'Regular meeting',items:[
+    I('i-bos-1','Consent calendar (sample)','Final decision','Routine approvals voted together. Any item can be pulled for discussion.','Approved (sample)'),
+    I('i-bos-2','Park fee schedule update (sample)','Final decision','Updates recreation fees for county parks after a public hearing.','Approved 4-1 (sample)')]},
+  {id:'m2',body:'bos',date:'2026-12-01',time:'9:00 a.m.',title:'Regular meeting',items:[
+    I('i-bos-3','Fifth Street bike lane corridor (sample)','Final decision','Staff recommends a protected lane with one parking change. Comment is accepted before the vote.'),
+    I('i-bos-4','Groundwater monitoring contract (sample)','Final decision','Approves a three-year monitoring contract. Scope and cost are in the attachment.')]},
+  {id:'m3',body:'sdcc',date:'2026-11-10',time:'10:00 a.m.',title:'Regular meeting',items:[
+    I('i-sdc-1','Short-term rental rules (sample)','Final decision','Updates permit rules for short-term rentals citywide.','Continued (sample)'),
+    I('i-sdc-2','Library hours update (sample)','Recommendation','Staff asks for direction on weekend hours. No final vote today.','Direction given (sample)')]},
+  {id:'m4',body:'sdcc',date:'2026-12-08',time:'10:00 a.m.',title:'Regular meeting',items:[
+    I('i-sdc-3','Street repair budget amendment (sample)','Final decision','Moves funds to repair arterial streets. Needs a simple majority.'),
+    I('i-sdc-4','Noise ordinance update (sample)','First reading','Changes nighttime noise limits. A second reading comes later.')]},
+  {id:'m5',body:'sdusd',date:'2026-11-12',time:'5:00 p.m.',title:'Regular board meeting',items:[
+    I('i-sd-1','Quarterly budget report (sample)','Information item','Reports spending through the first quarter. No vote.','Received (sample)'),
+    I('i-sd-2','Attendance boundary review (sample)','Recommendation','Staff presents boundary options for two schools.','Direction given (sample)')]},
+  {id:'m6',body:'sdusd',date:'2026-12-10',time:'5:00 p.m.',title:'Regular board meeting',items:[
+    I('i-sd-3','Facilities bond project list (sample)','Final decision','Approves the list of projects a bond would fund. Voter approval is separate.'),
+    I('i-sd-4','Superintendent search update (sample)','Information item','Update on the recruiting timeline. Closed session may follow.')]}
+];
+const ADDRESSES=[
+  {id:'a1',full:'1200 Sample Ave, San Diego, CA 92101',d:{fed:'fed-sd',state:'state-sd',county:'bos-3',city:'sdcc-3',school:'sdusd-c'}},
+  {id:'a2',full:'850 Sample Rd, San Diego, CA 92117',d:{fed:'fed-sd',state:'state-sd',county:'bos-2',city:'sdcc-6',school:'sdusd-a'}},
+  {id:'a3',full:'330 Sample St, San Diego, CA 92105',d:{fed:'fed-sd',state:'state-sd',county:'bos-4',city:'sdcc-4',school:'sdusd-e'}}
+];
+const SEED={
+  'item:i-bos-3':[{who:'Dana K.',text:'Worth attending. Bike lanes on that corridor keep coming back to the agenda.'}],
+  'item:i-bos-4':[{who:'Renee B.',text:'Where can I read the contract scope before the vote?'}],
+  'meet:m2':[{who:'Marcus T.',text:'Anyone know if the street repair amendment covers my block?'}],
+  'meet:m6':[{who:'Priya S.',text:'A superintendent search timeline would help families plan.'}]
+};
+const LEVEL_LABEL={fed:'U.S. House',state:'State Senate',county:'County supervisor',city:'City council',school:'School board'};
+const WORKING=['county','city','school'];
+
+const state={screen:'signin',user:'',error:'',addr:null,page:'feed',navOpen:true,toggles:{county:true,city:true,school:true},meetingId:null,query:'',drafts:{},posts:JSON.parse(JSON.stringify(SEED))};
+
+const fmtDate=d=>new Date(d+'T12:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'});
+const isPast=m=>m.date<TODAY;
+const byAsc=(a,b)=>a.date.localeCompare(b.date);
+const byDesc=(a,b)=>b.date.localeCompare(a.date);
+const domId=key=>'disc-'+key.replace(/[^a-z0-9]/gi,'_');
+const scopeBodies=()=>WORKING.filter(l=>state.toggles[l]).map(l=>DIST[state.addr.d[l]].body);
+const scopedMeetings=()=>{if(!state.addr)return[];const s=scopeBodies();return MEETINGS.filter(m=>s.includes(m.body));};
+const mine=id=>!!state.addr&&Object.values(state.addr.d).includes(id);
+const discussion=key=>(state.posts[key]||[]).map(p=>`<div class="post"><b>${esc(p.who)}</b><div>${esc(p.text)}</div></div>`).join('')||'<p class="muted">No comments yet.</p>';
+const composer=key=>`<textarea rows="2" placeholder="Add a comment" data-draft-key="${esc(key)}">${esc(state.drafts[key]||'')}</textarea><div style="margin-top:6px"><button data-act="post" data-key="${esc(key)}">Post</button></div>`;
+
+function viewSignin(){
+  return `<div class="signin"><div class="card"><h1>Civic Lens</h1><p class="muted">Prototype sign-in. Enter a username. No password is needed.</p>
+    <input id="username" placeholder="Username" value="${esc(state.user)}" autocomplete="off">
+    <div class="err">${esc(state.error)}</div><div style="margin-top:6px"><button data-act="signin">Continue</button></div></div></div>`;
+}
+
+function listMeetings(ms){
+  return ms.map(m=>`<div class="row"><div><b>${fmtDate(m.date)} · ${esc(m.time)}</b>
+    <div class="muted small">${esc(BODIES[m.body].name)} · ${esc(m.title)} · ${m.items.length} items</div></div>
+    <button class="ghost" data-act="open" data-id="${m.id}">Open agenda</button></div>`).join('');
+}
+
+function viewFeed(){
+  if(!state.addr) return `<div class="card"><h1>Welcome, ${esc(state.user)}</h1><p class="muted">Find your districts first. Your feed shows meetings for the bodies that represent you.</p><button data-act="page" data-id="find">Find my districts</button></div>`;
+  const ms=scopedMeetings();
+  const up=ms.filter(m=>!isPast(m)).sort(byAsc).slice(0,4);
+  const past=ms.filter(isPast).sort(byDesc);
+  const decided=past.flatMap(m=>m.items.filter(i=>i.result).map(i=>({m,i})));
+  const decisions=decided.map(({m,i})=>`<div class="row"><div><b>${esc(i.title)}</b><div class="muted small">${esc(BODIES[m.body].name)} · ${fmtDate(m.date)}</div></div><span class="tag ok">${esc(i.result)}</span></div>`).join('')||'<p class="muted">No recent decisions for your districts.</p>';
+  return `<div class="card"><h2>Coming up</h2>${listMeetings(up)||'<p class="muted">No upcoming meetings for your districts.</p>'}</div>
+    <div class="card"><h2>Recent decisions</h2>${decisions}</div>`;
+}
+
+function viewFind(){
+  return `<div class="card"><h1>Find my districts</h1><p class="muted">Search a San Diego address. Prototype: only the sample addresses match until the geocoder is added.</p>
+    <input id="q" placeholder="Type a San Diego address" value="${esc(state.query)}" autocomplete="off">
+    <div id="results" style="margin-top:10px">${findResults()}</div></div>`;
+}
+function findResults(){
+  const q=state.query.trim().toLowerCase();
+  const rows=ADDRESSES.filter(a=>!q||a.full.toLowerCase().includes(q));
+  if(!rows.length) return '<p class="muted">No sample address matches. Try "Sample".</p>';
+  return rows.map(a=>`<div class="card"><b>${esc(a.full)}</b>
+    <div class="small" style="margin:8px 0">${Object.keys(LEVEL_LABEL).map(l=>`${esc(LEVEL_LABEL[l])}: ${esc(DIST[a.d[l]].rep)} <span class="muted">(${esc(DIST[a.d[l]].label)})</span>`).join('<br>')}</div>
+    <button data-act="choose" data-id="${a.id}">Use this address</button></div>`).join('');
+}
+
+function viewBodies(){
+  return Object.keys(BODIES).map(id=>{
+    const b=BODIES[id];
+    const mem=b.members.map(m=>`<div class="row"><div><b>${esc(DIST[m].rep)}</b><div class="muted small">${esc(DIST[m].label)}</div></div>${mine(m)?'<span class="tag ok">Your rep</span>':''}</div>`).join('');
+    return `<div class="card"><h1>${esc(b.name)}</h1><p>${esc(b.about)}</p>
+      ${b.meets?'<button class="ghost" data-act="page" data-id="meetings" style="margin-bottom:8px">See meetings</button>':''}
+      <h2 style="margin-top:10px">Members</h2>${mem}<p class="muted small">${esc(b.note)}</p></div>`;
+  }).join('');
+}
+
+function viewMeetings(){
+  if(!state.addr) return `<div class="card"><p class="muted">Set your address on Find my districts to see meetings for your bodies.</p></div>`;
+  const ms=scopedMeetings();
+  if(!ms.length) return `<div class="card"><p class="muted">Turn on at least one working district in the sidebar to see meetings.</p></div>`;
+  const up=ms.filter(m=>!isPast(m)).sort(byAsc);
+  const prev=ms.filter(isPast).sort(byDesc);
+  return `<div class="card"><h2>Upcoming</h2>${listMeetings(up)||'<p class="muted">No upcoming meetings.</p>'}</div>
+    <div class="card"><h2>Previous</h2>${listMeetings(prev)||'<p class="muted">No previous meetings.</p>'}</div>`;
+}
+
+function viewAgenda(){
+  const m=MEETINGS.find(x=>x.id===state.meetingId);
+  if(!m) return `<div class="card"><p class="muted">No meeting selected. Open one from Meetings.</p></div>`;
+  const past=isPast(m);
+  const items=m.items.map(it=>`<details class="item"><summary>${esc(it.title)}</summary>
+      <div style="margin-top:8px"><span class="tag ${it.action==='Final decision'?'final':''}">${it.action==='Final decision'?'Final: this body':'Advisory'}</span>
+      <span class="tag">${esc(it.action)}</span>${past&&it.result?`<span class="tag ok">${esc(it.result)}</span>`:''}</div>
+      <p>${esc(it.summary)}</p><h2>Discussion on this item</h2>
+      <div id="${domId('item:'+it.id)}">${discussion('item:'+it.id)}</div>${composer('item:'+it.id)}</details>`).join('');
+  return `<div class="card"><button class="ghost" data-act="page" data-id="meetings" style="margin-bottom:10px">← Back to meetings</button>
+      <h1>${esc(BODIES[m.body].name)}</h1><div class="muted">${fmtDate(m.date)} · ${esc(m.time)} · ${esc(m.title)}</div>
+      <span class="tag ${past?'':'ok'}">${past?'Previous':'Upcoming'}</span></div>
+    <div class="card"><h2>Agenda items</h2>${items}</div>
+    <div class="card"><h2>General meeting discussion</h2><div id="${domId('meet:'+m.id)}">${discussion('meet:'+m.id)}</div>${composer('meet:'+m.id)}</div>`;
+}
+
+const TITLES={feed:'Feed',find:'Find my districts',bodies:'Bodies',meetings:'Meetings',agenda:'Agenda'};
+function sidebarBody(){
+  const nav=[['feed','Feed'],['find','Find my districts'],['bodies','Bodies'],['meetings','Meetings']]
+    .map(([id,l])=>`<button class="navbtn ${state.page===id||(id==='meetings'&&state.page==='agenda')?'on':''}" data-act="page" data-id="${id}">${l}</button>`).join('');
+  const districts=state.addr
+    ? `<div class="sidebox"><h2>Your districts</h2>${WORKING.map(l=>`<label class="tg"><input type="checkbox" data-act="toggle" data-id="${l}" ${state.toggles[l]?'checked':''}><span><b>${esc(LEVEL_LABEL[l])}</b><br><span class="muted small">${esc(DIST[state.addr.d[l]].label)}</span></span></label>`).join('')}
+        <p class="muted small">Show meetings for each body. State and U.S. House info pages are not working yet.</p></div>`
+    : `<div class="sidebox"><p class="muted small">No address set. Use Find my districts.</p></div>`;
+  return `<div class="brand">Civic Lens</div>${nav}${districts}`;
+}
+
+function viewApp(){
+  const page={feed:viewFeed,find:viewFind,bodies:viewBodies,meetings:viewMeetings,agenda:viewAgenda}[state.page]();
+  return `<div class="shell ${state.navOpen?'':'closed'}">
+    <aside class="side">${sidebarBody()}</aside>
+    <div class="main">
+      <header><button class="ghost" data-act="nav" title="Show or hide menu">☰</button><b>${esc(TITLES[state.page])}</b><span class="spacer"></span>
+        <span class="muted small">${esc(state.user)}${state.addr?' · '+esc(state.addr.full):''}</span>
+        <button class="ghost" data-act="signout">Sign out</button></header>
+      <div class="wrap">${page}</div>
+      <footer>Prototype. Sample meetings and addresses. Officeholders and district numbers must be verified before any public test.</footer>
+    </div></div>`;
+}
+
+function render(){
+  const app=document.getElementById('app');
+  const scroll=window.scrollY;
+  app.innerHTML=state.screen==='signin'?viewSignin():viewApp();
+  window.scrollTo(0,scroll);
+}
+function signin(){
+  const name=state.user.trim();
+  if(!name){state.error='Enter a username to continue.';render();return;}
+  state.user=name;state.error='';state.screen='app';state.page='feed';render();
+}
+
+document.addEventListener('click',e=>{
+  const t=e.target.closest('[data-act]'); if(!t) return;
+  const act=t.dataset.act, id=t.dataset.id;
+  if(act==='signin') return signin();
+  if(act==='nav'){state.navOpen=!state.navOpen;return render();}
+  if(act==='choose'){
+    state.addr=ADDRESSES.find(a=>a.id===id);
+    Object.assign(state,{page:'feed',toggles:{county:true,city:true,school:true},meetingId:null});
+    return render();
+  }
+  if(act==='signout'){Object.assign(state,{screen:'signin',user:'',addr:null,error:'',page:'feed'});return render();}
+  if(act==='page'){state.page=id;return render();}
+  if(act==='open'){state.meetingId=id;state.page='agenda';return render();}
+  if(act==='post'){
+    const ta=t.parentElement.previousElementSibling;
+    const text=(ta.value||'').trim(); if(!text) return;
+    const key=t.dataset.key;
+    state.posts[key]=(state.posts[key]||[]).concat({who:state.user,text});
+    state.drafts[key]='';
+    ta.value='';
+    const box=document.getElementById(domId(key)); if(box) box.innerHTML=discussion(key);
+  }
+});
+document.addEventListener('change',e=>{
+  if(e.target.dataset.act==='toggle'){state.toggles[e.target.dataset.id]=e.target.checked;render();}
+});
+document.addEventListener('input',e=>{
+  if(e.target.id==='username') state.user=e.target.value;
+  if(e.target.id==='q'){state.query=e.target.value;const r=document.getElementById('results');if(r) r.innerHTML=findResults();}
+  if(e.target.dataset.draftKey) state.drafts[e.target.dataset.draftKey]=e.target.value;
+});
+document.addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&e.target.id==='username') signin();
+});
+render();
+</script>
+</body>
+</html>

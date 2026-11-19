@@ -1,4 +1,4 @@
--- Civic Lens schema. Use a SEPARATE Supabase project from BallotBridge.
+-- Civic Lens schema. Use a SEPARATE Supabase project for each app.
 -- Run once in the SQL Editor. Safe to re-run.
 
 -- Governing bodies: the places that make decisions for an address.
