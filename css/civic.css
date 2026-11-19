@@ -163,6 +163,11 @@ details.ex{border-left:3px solid #d9868c;padding-left:12px;margin:8px 0}
 .fav-act{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;align-items:flex-start}
 @media(max-width:760px){.fav-row{flex-direction:column}.fav-act{justify-content:flex-start}}
 
+/* Favorite star: icon only, with an accessible label on the button */
+button.star{min-width:40px;min-height:40px;padding:0 8px;font-size:20px;line-height:1;background:#fff;color:var(--navy);border:1px solid #8b95aa}
+button.star:hover{background:var(--soft);border-color:var(--navy)}
+button.star.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+
 /* Sign in */
 .signin{max-width:440px;margin:80px auto;padding:0 20px}
 .signin .card{border:0}

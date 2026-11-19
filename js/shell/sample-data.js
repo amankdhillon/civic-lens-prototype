@@ -37,6 +37,7 @@ const SEED_BOARDS={
     T('t12','Police response times in our district','information',[P('Jamal R.','A monthly response-time report by council district is proposed for January. It is on the December 7 agenda.','2026-11-18')]),
     T('t13','Lighting on the Park Boulevard trail','question',[P('Lena G.','Is the north entrance lighting in the November 10 funding?','2026-11-16'),P('Ben C.','Yes, the $650,000 includes trail lighting. Crews start in spring.','2026-11-16')])]},
   'body:sdcc':{threads:[
+    T('t22','Dec 1 meeting: Who is speaking on the public comment rules?','question',[P('Renee B.','Planning to speak December 1 about the two-minute limit. Tips?','2026-11-17'),P('Owen M.','Sign up with the clerk before the item is called. Bring a written copy too.','2026-11-18')]),
     T('t5','Council meetings and public comment','opinion',[P('Dana K.','Shorter comment periods make it hard to speak. Who else has noticed?','2026-11-12'),P('Owen M.','Two minutes is tight for a complex item. I hope the December 1 vote gets it right.','2026-11-13')]),
     T('t14','What gets discussed in closed session?','question',[P('Helen W.','Closed sessions are at 10 a.m. Monday. How do I read the litigation items?','2026-11-10'),P('Greg H.','The clerk posts the closed session agenda before the meeting. Item numbers match the public list.','2026-11-11')]),
     T('t15','Thank you for the noise ordinance vote','opinion',[P('Renee B.','Thank you for the Saturday construction window change. It helps our block.','2026-11-10'),P('Owen M.','Glad it passed 7-2, but the permit notice still needs work.','2026-11-11')])]},
@@ -44,16 +45,13 @@ const SEED_BOARDS={
     T('t4','Question for the next supervisor meeting','question',[P('Renee B.','Will public comment time change for the December meeting?','2026-11-13'),P('Tomas V.','Public comment is set by the board chair. Check the December 8 agenda notes.','2026-11-14')]),
     T('t16','Winter shelter capacity for 2026-27','information',[P('Nadia K.','The contract approved November 17 keeps 600 winter beds, up from last season according to the staff summary.','2026-11-17'),P('Tomas V.','Good news. The summary does not say where the new beds are located.','2026-11-17')])]},
   'body:cpg-uptown':{threads:[
+    T('t23','Nov 19 meeting: Questions to ask about the Park Boulevard presentation','question',[P('Dana K.','Our November 19 meeting includes the corridor plan. Suggested questions?','2026-11-17'),P('Aaron D.','Ask about parking loss and the construction timeline.','2026-11-18')]),
     T('t18','How do I attend the next planning meeting?','question',[P('Lena G.','New here. Can anyone in the planning area attend without being a member?','2026-11-12'),P('Ben C.','Yes, meetings are open to the public. Only elected voting members vote on recommendations.','2026-11-12')]),
     T('t19','What should the Park Boulevard plan include?','opinion',[P('Dana K.','We need protected bike lanes, not paint. Who agrees?','2026-11-15'),P('Aaron D.','Protected lanes and a crossing at Quince would help kids walk to school.','2026-11-16')])]},
   'place:sdcc-3':{threads:[
     T('t6','Park cleanup Saturday, who is coming?','question',[P('Marcus T.','Meeting at the north entrance at 9. Bring gloves.','2026-11-15'),P('Helen W.','I can bring extra bags and a rake.','2026-11-16')])]},
   'place:cpg-uptown':{threads:[
     T('t20','Short-term rental complaints on our blocks','question',[P('Jamal R.','Who handles noise complaints at short-term rentals?','2026-11-13'),P('Helen W.','Code enforcement handles the rental permits. Police handle loud parties. The group hears a quarterly report.','2026-11-14')])]},
-  'meet:cal-2026-12-01-council-pm':{threads:[
-    T('t22','Who is speaking on the public comment rules?','question',[P('Renee B.','Planning to speak December 1 about the two-minute limit. Tips?','2026-11-17'),P('Owen M.','Sign up with the clerk before the item is called. Bring a written copy too.','2026-11-18')])]},
-  'meet:cal-2026-11-19-cpg':{threads:[
-    T('t23','Questions to ask about the Park Boulevard presentation','question',[P('Dana K.','Our November 19 meeting includes the corridor plan. Suggested questions?','2026-11-17'),P('Aaron D.','Ask about parking loss and the construction timeline.','2026-11-18')])]},
   'item:it-1110-2':{threads:[
     T('t24','Reserves move: is this a good use?','opinion',[P('Marcus T.','Moving reserves to roads makes sense if the amount is one-time.','2026-11-10'),P('Dana K.','Staff says it is one-time, but the reserve target still needs watching.','2026-11-11')])]},
   'item:it-1201-1':{threads:[

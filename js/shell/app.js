@@ -54,7 +54,6 @@ function allBoardKeys(){
     ...Object.keys(BODIES).filter(b=>BODIES[b].kind!=='community').map(b=>'body:'+b),
     ...Object.keys(BODIES).filter(b=>BODIES[b].kind==='community').map(b=>'group:'+b),
     ...Object.keys(DIST).filter(d=>d.startsWith('sdcc-')).map(d=>'place:'+d),
-    ...MEETINGS.map(m=>'meet:'+m.id),
     ...MEETINGS.flatMap(m=>m.items.map(i=>'item:'+i.id)),
     ...state.remote.threads.map(t=>(t.scope_kind==='meeting'?'meet':t.scope_kind)+':'+t.scope_id)
   ]);
@@ -107,16 +106,12 @@ function backLink(k){
   return pm?`<button class="ghost" data-act="meeting" data-id="${pm.id}" style="margin-bottom:10px">← Back to meeting</button>`
            :`<button class="ghost" data-act="page" data-id="boards" style="margin-bottom:10px">← Your boards</button>`;
 }
-// The + on each meeting: opens two choices. Calendar holds the meeting; discussion board follows its thread.
+// A meeting can only be added to the calendar. Its discussion lives on the body's board.
 function addControls(m){
-  const open=state.menuFor===m.id, cal=state.calendar.includes(m.id), fol=!!state.followed['meet:'+m.id];
-  return `<div class="addwrap">
-    <button class="addbtn" data-act="addmenu" data-id="${m.id}" aria-expanded="${open}" aria-controls="menu-${m.id}" aria-label="Add meeting: ${esc(BODIES[m.body].name)}, ${esc(fmtDate(m.date))}">+ Add</button>
-    ${open?`<div class="addmenu" id="menu-${m.id}">
-      <button class="${cal?'ghost':''}" data-act="tocal" data-id="${m.id}">${cal?'Remove from calendar':'Add to calendar'}</button>
-      <button class="${fol?'ghost':''}" data-act="followmeet" data-id="${m.id}">${fol?'Remove from discussion board':'Add to discussion board'}</button>
-    </div>`:''}</div>`;
+  const cal=state.calendar.includes(m.id);
+  return `<button class="${cal?'ghost':''}" data-act="tocal" data-id="${m.id}" aria-pressed="${cal}">${cal?'Remove from calendar':'Add to calendar'}</button>`;
 }
+
 function meetingRow(m){
   const cal=state.calendar.includes(m.id), w=whenLabel(m.date), n=m.items.length;
   return `<div class="mrow ${isPast(m)?'past':''}"><div class="mdate"><span>${esc(w.wd)}</span><b>${esc(w.day)}</b></div>
@@ -178,8 +173,10 @@ function feedDiscussionCard(k){
 }
 
 const persistFavs=()=>{try{localStorage.setItem('civic.favItems',JSON.stringify(state.favItems));localStorage.setItem('civic.favBoards',JSON.stringify(state.favBoards));}catch(e){}};
-const starItemBtn=id=>{const on=!!state.favItems[id];return `<button class="${on?'':'ghost'}" data-act="staritem" data-id="${esc(id)}" aria-pressed="${on}">${on?'★ Saved item':'☆ Save item'}</button>`;};
-const starBoardBtn=k=>{if(k.startsWith('item:'))return '';const on=!!state.favBoards[k];return `<button class="${on?'':'ghost'}" data-act="starboard" data-key="${esc(k)}" aria-pressed="${on}">${on?'★ Saved board':'☆ Save board'}</button>`;};
+const starItemBtn=id=>{const on=!!state.favItems[id];const l=on?'Remove from favorites':'Save to favorites';return `<button class="star ${on?'on':''}" data-act="staritem" data-id="${esc(id)}" aria-pressed="${on}" aria-label="${l}" title="${l}">${on?'★':'☆'}</button>`;};
+
+const starBoardBtn=k=>{if(k.startsWith('item:'))return '';const on=!!state.favBoards[k];const l=on?'Remove from favorites':'Save to favorites';return `<button class="star ${on?'on':''}" data-act="starboard" data-key="${esc(k)}" aria-pressed="${on}" aria-label="${l}" title="${l}">${on?'★':'☆'}</button>`;};
+
 const legendHtml=()=>`<div class="legend" aria-label="Color key"><span class="tag up">Upcoming</span><span class="tag ok">Passed or result</span><span class="tag final">Final vote</span><span class="tag adv">Advisory</span><span class="tag exp">Explanation</span><span class="tag">Comment</span></div>`;
 
 function viewFeed(){
@@ -201,9 +198,9 @@ function viewFavorites(){
       <button class="linkish" data-act="item" data-id="${it.id}">${esc(it.title)}</button>
       <p class="tags"><span class="tag ${past?'prev':'up'}">${past?'Previous':'Upcoming'}</span>${it.result?`<span class="tag ok">Result: ${esc(it.result)}</span>`:''}</p>
       <div class="muted small">${ex} explanation${ex===1?'':'s'} · ${cm} comment${cm===1?'':'s'}</div></div>
-      <div class="fav-act"><button data-act="item" data-id="${it.id}">Open item</button><button class="ghost" data-act="staritem" data-id="${it.id}" aria-pressed="true">Remove</button></div></div>`;
+      <div class="fav-act"><button data-act="item" data-id="${it.id}">Open item</button>${starItemBtn(it.id)}</div></div>`;
   }).join('');
-  const boardRows=boards.map(k=>{const info=boardInfo(k);return `<div class="fav-row"><div class="fav-main"><button class="linkish" data-act="board" data-key="${esc(k)}">${esc(info.title)}</button><div class="muted small">${esc(info.scope)} · ${actLine(k)}</div></div><div class="fav-act"><button data-act="board" data-key="${esc(k)}">Open board</button><button class="ghost" data-act="starboard" data-key="${esc(k)}" aria-pressed="true">Remove</button></div></div>`;}).join('');
+  const boardRows=boards.map(k=>{const info=boardInfo(k);return `<div class="fav-row"><div class="fav-main"><button class="linkish" data-act="board" data-key="${esc(k)}">${esc(info.title)}</button><div class="muted small">${esc(info.scope)} · ${actLine(k)}</div></div><div class="fav-act"><button data-act="board" data-key="${esc(k)}">Open board</button>${starBoardBtn(k)}</div></div>`;}).join('');
   return `<section class="card"><h1>Favorites</h1><p class="muted">Agenda items and discussion boards you saved for quick access. Saving is separate from following a board. Saving does not send updates.</p></section>
     <section class="card"><h2>Saved agenda items</h2>${itemRows||'<p class="muted">No saved items yet. Open an agenda item and choose Save item.</p>'}</section>
     <section class="card"><h2>Saved discussion boards</h2>${boardRows||'<p class="muted">No saved boards yet. Open a board and choose Save board.</p>'}</section>`;
@@ -303,10 +300,12 @@ function viewMeetings(){
     <div class="card"><h2>Previous</h2>${listMeetings(prev)||'<p class="muted">No previous meetings.</p>'}</div>`;
 }
 
+// Threads about a meeting are on its body's board, titled "Dec 1 meeting: ...".
+function meetingThreads(m){return boardFor('body:'+m.body).threads.filter(th=>th.title.startsWith(fmtShort(m.date)+' meeting:'));}
 function viewMeeting(){
   const m=findMeeting(state.meetingId);
   if(!m) return `<section class="card"><p class="muted">No meeting selected. Open one from Meetings.</p></section>`;
-  const past=isPast(m), mk='meet:'+m.id, ms=boardStats(mk), b=BODIES[m.body], cal=state.calendar.includes(m.id);
+  const past=isPast(m), b=BODIES[m.body], cal=state.calendar.includes(m.id);
   const fin=m.items.filter(i=>i.action==='Final decision').length;
   const resulted=m.items.filter(i=>i.result).length;
   const overview=m.items.length
@@ -323,6 +322,10 @@ function viewMeeting(){
       <div class="bar">${starItemBtn(it.id)}<button data-act="item" data-id="${it.id}">Open item: ${ex} explanation${ex===1?'':'s'}, ${cm} comment${cm===1?'':'s'}</button></div>
     </div></li>`;
   }).join('');
+  const threads=meetingThreads(m);
+  const tl=threads.length?threads.map(th=>`<div class="brow"><div class="brow-main"><button class="linkish" data-act="thread" data-key="body:${esc(m.body)}" data-id="${esc(th.id)}">${esc(th.title)}</button>
+      <div class="muted small">${th.posts.length} post${th.posts.length===1?'':'s'} · last post ${esc(fmtShort(threadLast(th)))}</div></div></div>`).join('')
+    :'<p class="muted">No threads about this meeting yet.</p>';
   return `<section class="card">
       <button class="ghost" data-act="page" data-id="meetings" style="margin-bottom:14px">← Back to meetings</button>
       <p class="eyebrow">${esc(b.name)}</p>
@@ -335,8 +338,10 @@ function viewMeeting(){
       <p class="muted small">${m.source?`Source: <a href="${esc(m.source)}" target="_blank" rel="noopener">City Clerk meetings calendar</a>, checked ${esc(m.checked||'')}. Verify before relying on it.`:'Sample schedule and agenda for this prototype. Not from an official source.'}</p></section>
     <section class="card"><h2>Agenda</h2><p class="muted small">Open an item to read its plain summary, who is accountable, and residents' explanations. Comments on an item stay with that item.</p>
       ${items?`<ol class="agenda">${items}</ol>`:'<p class="muted">Agenda items have not been loaded for this meeting yet.</p>'}</section>
-    <section class="card"><h2>Meeting discussion</h2><p class="muted small">General comments about the meeting as a whole.</p>
-      <div class="bar"><button class="ghost" data-act="board" data-key="${esc(mk)}">Open meeting discussion (${ms.count} thread${ms.count===1?'':'s'})</button></div></section>`;
+    <section class="card zone-community"><h2>Discussion about this meeting</h2>
+      <p class="muted small">Threads about the whole meeting are on the ${esc(b.name)} board.</p>
+      ${tl}
+      <div class="bar"><button class="ghost" data-act="meetthread" data-id="${m.id}">Start a thread about this meeting</button></div></section>`;
 }
 
 function viewCalendar(){
@@ -347,7 +352,7 @@ function viewCalendar(){
 
 function boardsHtml(){
   const q=state.boardQuery.trim().toLowerCase();
-  const order=['body','meet','topic','place'];
+  const order=['body','topic','place'];
   const titles={body:'Bodies',meet:'Meetings',topic:'Citywide topics',place:'Your districts'};
   return order.map(type=>{
     const keys=allBoardKeys().filter(k=>k.startsWith(type+':')).filter(k=>!q||boardInfo(k).title.toLowerCase().includes(q));
@@ -640,12 +645,11 @@ document.addEventListener('click',e=>{
   if(act==='signout') return signOutApp();
   if(act==='page') return go(id,{meetingId:null,boardKey:null,threadId:null});
   if(act==='meeting') return go('meeting',{meetingId:id,menuFor:null});
-  if(act==='addmenu'){state.menuFor=state.menuFor===id?null:id;return render();}
   if(act==='tocal'){const i=state.calendar.indexOf(id);if(i>=0)state.calendar.splice(i,1);else state.calendar.push(id);state.menuFor=id;persist();return render();}
-  if(act==='followmeet'){const k='meet:'+id;state.followed[k]=!state.followed[k];state.menuFor=id;persist();return render();}
   if(act==='body') return go('body',{bodyId:id});
   if(act==='item') return go('item',{itemId:id,threadId:null});
   if(act==='postex') return postEx(key);
+  if(act==='meetthread'){const m=findMeeting(id);state.drafts['newtitle:body:'+m.body]=fmtShort(m.date)+' meeting: ';return go('board',{boardKey:'body:'+m.body,threadId:null});}
   if(act==='staritem'){if(state.favItems[id]) delete state.favItems[id]; else state.favItems[id]=true; persistFavs(); return render();}
   if(act==='starboard'){if(state.favBoards[key]) delete state.favBoards[key]; else state.favBoards[key]=true; persistFavs(); return render();}
   if(act==='exskip'){state.drafts[exKey(key,id)]='';return render();}
