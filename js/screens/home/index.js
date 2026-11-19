@@ -1,5 +1,4 @@
-// Feed: what you pinned. Meetings of bodies you follow and meetings on your calendar, soonest first, then pinned items.
-// Empty until you follow a body or add a meeting. Places are listed for quick access.
+// Home: upcoming meetings and agenda items on the left, active community discussions on the right.
 import { state } from '../../state.js';
 import { esc } from '../../lib/dom.js';
 import { fmtDateTime } from '../../lib/format.js';
@@ -8,49 +7,69 @@ import { skeleton, empty } from '../../components/ui.js';
 import { pinButton, bindPins } from '../../components/pin-button.js';
 import { listUpcomingMeetings, listMeetingsByIds, getItem } from '../../services/bodies.js';
 import { listPlaces } from '../../services/places.js';
+import { listRecentDiscussions, SCOPE_LABEL, scopeHref } from '../../services/discussions.js';
 
-function feedMeeting(m) {
+const PLACE_ORDER = ['county', 'congressional_district', 'state_district', 'city', 'council_district', 'school_district', 'neighborhood'];
+const PLACE_KIND = {
+  county: 'County',
+  congressional_district: 'U.S. House',
+  state_district: 'State senate',
+  city: 'City',
+  council_district: 'Local district',
+  school_district: 'School district',
+  neighborhood: 'Neighborhood',
+};
+
+const snippet = (text, n = 180) => (text.length > n ? `${text.slice(0, n).trim()}…` : text);
+
+function meetingCard(m) {
   return `
     <article class="card meeting">
       <div class="meeting__head">
         <div>
           <p class="meta">${esc(fmtDateTime(m.startsAt))} · ${esc(m.bodyName)}</p>
-          <h3>${esc(m.title)}</h3>
+          <h3><a href="#/meeting/${esc(m.id)}">${esc(m.title)}</a></h3>
         </div>
         ${pinButton({ kind: 'meeting', id: m.id, name: m.title, pinned: state.pins.meeting.has(m.id) })}
       </div>
       ${m.items.length
-        ? `<ul class="item-list">${m.items.map(i => `
+        ? `<ul class="item-list">${m.items.slice(0, 4).map(i => `
             <li><a href="#/item/${esc(i.id)}">${esc(i.title)}</a> <span class="tag">${esc(STAGE_LABEL[i.stage])}</span></li>`).join('')}</ul>`
         : ''}
     </article>`;
 }
 
-function feedItem(item) {
+function pinnedItemCard(item) {
   return `
     <article class="card">
       <div class="meeting__head">
         <div>
           <p class="meta">${esc(item.meeting.bodyName)} · ${esc(fmtDateTime(item.meeting.startsAt))}</p>
           <h3><a href="#/item/${esc(item.id)}">${esc(item.title)}</a></h3>
-          <p class="row__meta">${esc(STAGE_LABEL[item.stage])}</p>
+          <p class="meta">${esc(STAGE_LABEL[item.stage])}</p>
         </div>
         ${pinButton({ kind: 'item', id: item.id, name: item.title, pinned: true })}
       </div>
     </article>`;
 }
 
+function discussionCard(d) {
+  return `
+    <article class="card discussion-card">
+      <p class="meta"><span class="scope">${esc(SCOPE_LABEL[d.scope] ?? d.scope)}</span> · ${esc(d.authorName)} · ${esc(fmtDateTime(d.createdAt))}</p>
+      <h3><a href="${esc(scopeHref(d.scope, d.id))}">${esc(d.title)}</a></h3>
+      <p>${esc(snippet(d.body))}</p>
+    </article>`;
+}
+
 export async function render(root) {
   root.innerHTML = skeleton(3);
-  const followed = [...state.pins.body];
-  const pinnedMeetingIds = [...state.pins.meeting];
-  const pinnedItemIds = [...state.pins.item];
-
-  const [fromBodies, fromCalendar, items, places] = await Promise.all([
-    listUpcomingMeetings(followed),
-    listMeetingsByIds(pinnedMeetingIds),
-    Promise.all(pinnedItemIds.map(id => getItem(id))),
+  const [fromBodies, fromCalendar, items, places, discussions] = await Promise.all([
+    listUpcomingMeetings([...state.pins.body]),
+    listMeetingsByIds([...state.pins.meeting]),
+    Promise.all([...state.pins.item].map(id => getItem(id))),
     listPlaces(state.me.placeIds),
+    listRecentDiscussions(8),
   ]);
 
   const now = Date.now();
@@ -60,42 +79,46 @@ export async function render(root) {
     .forEach(m => byId.set(m.id, m));
   const meetings = [...byId.values()].sort((a, b) => new Date(a.startsAt) - new Date(b.startsAt));
   const pinnedItems = items.filter(Boolean);
-  const nothingPinned = !meetings.length && !pinnedItems.length;
+  const orderedPlaces = PLACE_ORDER.flatMap(kind => places.filter(p => p.kind === kind));
 
   root.innerHTML = `
     <header class="page-head">
       <div>
+        <p class="eyebrow">Your government</p>
         <h1>Your feed</h1>
-        <p class="lead">Meetings and agenda items you've pinned, and the next meetings of bodies you follow.</p>
+        <p class="lead">Decisions coming up where you live, and what neighbors are discussing.</p>
       </div>
     </header>
 
-    ${nothingPinned ? `
-      <section class="card stack">
-        <p>Nothing pinned yet.</p>
-        <p class="row__meta">Open a place and follow the bodies that matter to you. Their meetings show up here.</p>
-        <div class="row"><a class="btn btn--primary" href="#/places">Find your places</a></div>
-      </section>` : ''}
+    ${orderedPlaces.length ? `
+      <nav class="place-chips" aria-label="Your places">
+        ${orderedPlaces.map(p => `
+          <a class="place-chip" href="#/place/${esc(p.id)}">
+            <span class="place-chip__kind">${esc(PLACE_KIND[p.kind] ?? p.kind)}</span>
+            <span class="place-chip__name">${esc(p.name)}</span>
+          </a>`).join('')}
+      </nav>` : ''}
 
-    ${meetings.length ? `
-      <section class="stack" aria-labelledby="meetings-h">
-        <h2 id="meetings-h">Upcoming meetings</h2>
-        ${meetings.map(feedMeeting).join('')}
-      </section>` : ''}
+    <div class="home-grid">
+      <section class="col" aria-labelledby="coming-h">
+        <h2 id="coming-h">Coming up</h2>
+        ${meetings.length || pinnedItems.length ? '' : `
+          <div class="card stack">
+            <p>Nothing scheduled yet.</p>
+            <p class="meta">Follow a government body, or add a meeting to your calendar, and it appears here.</p>
+            <div class="row"><a class="btn btn--primary" href="#/places">Browse your places</a></div>
+          </div>`}
+        ${meetings.map(meetingCard).join('')}
+        ${pinnedItems.length ? `<h3 class="sub">Pinned items</h3>${pinnedItems.map(pinnedItemCard).join('')}` : ''}
+      </section>
 
-    ${pinnedItems.length ? `
-      <section class="stack" aria-labelledby="items-h">
-        <h2 id="items-h">Pinned items</h2>
-        ${pinnedItems.map(feedItem).join('')}
-      </section>` : ''}
-
-    ${places.length ? `
-      <section class="stack" aria-labelledby="places-h">
-        <h2 id="places-h">Your places</h2>
-        <ul class="rows">
-          ${places.map(p => `<li class="row"><a class="row__name" href="#/place/${esc(p.id)}">${esc(p.name)}</a></li>`).join('')}
-        </ul>
-      </section>` : empty('No places chosen yet.')}`;
+      <section class="col" aria-labelledby="talk-h">
+        <h2 id="talk-h">Active discussions</h2>
+        ${discussions.length
+          ? discussions.map(discussionCard).join('')
+          : empty('No discussions yet. Open a meeting or place and start one.')}
+      </section>
+    </div>`;
 
   bindPins(root, (kind, id, pinned) => { if (!pinned) render(root); });
 }

@@ -37,7 +37,7 @@ export async function render(root) {
                 <div class="meeting__head">
                   <div>
                     <p class="meta">${esc(fmtDateTime(m.startsAt))} · <a href="#/body/${esc(m.bodyId)}">${esc(m.bodyName)}</a></p>
-                    <h3>${esc(m.title)}</h3>
+                    <h3><a href="#/meeting/${esc(m.id)}">${esc(m.title)}</a></h3>
                   </div>
                   ${pinButton({ kind: 'meeting', id: m.id, name: m.title, pinned: true })}
                 </div>

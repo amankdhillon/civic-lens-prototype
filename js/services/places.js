@@ -53,5 +53,5 @@ export async function listCommunityMeetings(placeId) {
 export async function loadDemoPins() {
   const res = await fetch('data/demo-locations.json');
   if (!res.ok) throw new AppError('The sample locations could not be loaded.');
-  return (await res.json()).pins;
+  return (await res.json()).addresses;
 }

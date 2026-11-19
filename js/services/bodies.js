@@ -16,6 +16,7 @@ const toBody = r => ({
   placeId: r.place_id ?? '',
   kind: r.kind ?? 'governing',
   scheduleText: r.schedule_text ?? '',
+  parentId: r.parent_id ?? '',
 });
 
 const toMeeting = r => ({
@@ -67,7 +68,7 @@ export async function listMeetingsFor(bodyId) {
 
 export async function getItem(id) {
   const row = unwrap(await sb().from('items')
-    .select('*, decided:bodies!decided_by_body_id(name), meetings(id, starts_at, title, location, agenda_url, body_id, bodies(id, name, level, district_label, watch_url, comment_guide))')
+    .select('*, decided:bodies!decided_by_body_id(name), meetings(id, starts_at, title, location, agenda_url, body_id, bodies(id, name, level, district_label, watch_url, comment_guide, place_id))')
     .eq('id', id)
     .maybeSingle());
   if (!row) return null;
@@ -98,6 +99,7 @@ export async function getItem(id) {
       districtLabel: b.district_label,
       watchUrl: safe(b.watch_url),
       commentGuide: b.comment_guide ?? '',
+      placeId: b.place_id ?? '',
     },
   };
 }
@@ -121,4 +123,32 @@ export async function listBodiesByIds(ids) {
 // Bodies that belong to one place (the city, the county, a school area).
 export async function listBodiesForPlace(placeId) {
   return unwrap(await sb().from('bodies').select('*').eq('place_id', placeId).order('name')).map(toBody);
+}
+
+// Subcommittees of one body.
+export async function listSubBodies(parentId) {
+  return unwrap(await sb().from('bodies').select('*').eq('parent_id', parentId).order('name')).map(toBody);
+}
+
+// One meeting with its body and agenda items.
+export async function getMeeting(id) {
+  const row = unwrap(await sb().from('meetings')
+    .select('*, bodies(id, name, level, place_id), items(id, title, stage, outcome)')
+    .eq('id', id)
+    .maybeSingle());
+  if (!row) return null;
+  return {
+    id: row.id,
+    title: row.title,
+    startsAt: row.starts_at,
+    location: row.location,
+    status: row.status,
+    detailsUrl: safe(row.details_url),
+    agendaUrl: safe(row.agenda_url),
+    bodyId: row.body_id ?? '',
+    bodyName: row.bodies?.name ?? '',
+    level: row.bodies?.level ?? '',
+    placeId: row.bodies?.place_id ?? row.place_id ?? '',
+    items: (row.items ?? []).map(i => ({ id: i.id, title: i.title, stage: i.stage, outcome: i.outcome })),
+  };
 }

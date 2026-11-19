@@ -12,6 +12,7 @@ import * as place from './screens/place/index.js';
 import * as home from './screens/home/index.js';
 import * as body from './screens/body/index.js';
 import * as item from './screens/item/index.js';
+import * as meeting from './screens/meeting/index.js';
 import * as check from './screens/check/index.js';
 import * as places from './screens/places/index.js';
 import * as calendar from './screens/calendar/index.js';
@@ -27,6 +28,7 @@ export const routes = [
   { path: '/place/:id', need: 'ready', screen: place },
   { path: '/calendar', need: 'ready', screen: calendar },
   { path: '/pinned', need: 'ready', screen: pinned },
+  { path: '/meeting/:id', need: 'ready', screen: meeting },
   { path: '/item/:id', need: 'ready', screen: item },
 ];
 

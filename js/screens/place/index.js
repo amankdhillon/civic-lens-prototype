@@ -1,96 +1,64 @@
-// One place: general discussion, the bodies you can follow grouped by level, your district, representation, and community meetings.
-// Only residents can post in the general discussion or join a district.
+// One place. Governing bodies sit under their level, subcommittees under their parent. Community groups, representation,
+// upcoming community meetings, and the place discussion follow.
 import { state } from '../../state.js';
 import { esc } from '../../lib/dom.js';
 import { fmtDateTime } from '../../lib/format.js';
-import { COMMENT_KINDS } from '../../config.js';
+import { LEVELS, LEVEL_ORDER } from '../../config.js';
 import { skeleton, empty } from '../../components/ui.js';
 import { pinButton, bindPins, setPinButton } from '../../components/pin-button.js';
-import { toast, announce } from '../../components/toast.js';
+import { announce, toast } from '../../components/toast.js';
 import { getPlace, listPlaces, listOfficials, listCommunityMeetings } from '../../services/places.js';
 import { listBodiesForPlace } from '../../services/bodies.js';
 import { saveLocation, loadMe } from '../../services/auth.js';
-import { listPlaceComments, addPlaceComment } from '../../services/placeComments.js';
+import { listDiscussion } from '../../services/discussions.js';
+import { renderDiscussion, bindDiscussion, discussionHtml } from '../../components/discussion.js';
 
-const GROUPS = ['local', 'city', 'boards', 'school', 'county'];
-const TITLE = {
-  local: 'Your district',
-  city: 'City',
-  boards: 'Citywide boards and commissions',
-  school: 'School district',
-  county: 'County',
-};
 const KIND = {
   county: 'County',
   city: 'City',
-  council_district: 'City council district',
+  council_district: 'Local district',
   school_district: 'School district',
+  congressional_district: 'U.S. House district',
+  state_district: 'State senate district',
   neighborhood: 'Neighborhood',
 };
-const KIND_LABEL = Object.fromEntries(COMMENT_KINDS.map(k => [k.value, k.label]));
 
-// Rows for each group. Bodies follow with a plus. Your district is joined with a plus, and it's membership, not a pin.
-function buildRows(place, bodies, localPlaces) {
-  const governing = bodies.filter(b => b.placeId === place.id && b.kind !== 'board');
-  const boards = bodies.filter(b => b.placeId === place.id && b.kind === 'board');
-  const body = b => ({ kind: 'body', id: b.id, name: b.name, meta: b.scheduleText || 'Schedule not listed yet', pinned: state.pins.body.has(b.id) });
-  return {
-    local: localPlaces.map(p => ({ kind: 'district', id: p.id, name: `${p.name} threads`, meta: 'Local discussions', pinned: state.me.placeIds.includes(p.id) })),
-    city: governing.filter(b => b.level === 'city').map(body),
-    boards: boards.map(body),
-    school: governing.filter(b => b.level === 'school').map(body),
-    county: governing.filter(b => b.level === 'county').map(body),
-  };
+function bodyRow(b, nested = false) {
+  return `
+    <li class="row ${nested ? 'row--nested' : ''}">
+      <a class="row__text" href="#/body/${esc(b.id)}">
+        <span class="row__name">${esc(b.name)}</span>
+        <span class="row__meta">${esc(b.scheduleText || 'Schedule not listed yet')}</span>
+      </a>
+      ${pinButton({ kind: 'body', id: b.id, name: b.name, pinned: state.pins.body.has(b.id) })}
+    </li>`;
 }
 
-function groupsHtml(rows) {
-  const sections = GROUPS.filter(g => rows[g]?.length).map(g => `
-    <section class="group" aria-labelledby="g-${g}">
-      <h2 id="g-${g}">${esc(TITLE[g])}</h2>
-      <ul class="rows">
-        ${rows[g].map(r => `
-          <li class="row">
-            <div class="row__text">
-              <p class="row__name">${esc(r.name)}</p>
-              <p class="row__meta">${esc(r.meta)}</p>
-            </div>
-            ${pinButton({ kind: r.kind, id: r.id, name: r.name, pinned: r.pinned, action: r.kind === 'district' ? 'join-district' : 'pin' })}
-          </li>`).join('')}
-      </ul>
-    </section>`).join('');
-  return sections || empty('Nothing to follow here yet.');
+function governingHtml(bodies) {
+  const governing = bodies.filter(b => b.kind === 'governing');
+  const committees = bodies.filter(b => b.kind === 'committee');
+  const sections = LEVEL_ORDER.map(level => {
+    const group = governing.filter(b => b.level === level);
+    if (!group.length) return '';
+    return `
+      <div class="level-block">
+        <h3 class="level">${esc(LEVELS[level])}</h3>
+        <ul class="rows">
+          ${group.map(b => `
+            ${bodyRow(b)}
+            ${committees.filter(c => c.parentId === b.id).map(c => bodyRow(c, true)).join('')}`).join('')}
+        </ul>
+      </div>`;
+  }).join('');
+  return sections || empty('No governing bodies are listed for this place yet.');
 }
 
-function discussionHtml(comments, canPost) {
-  const list = comments.length
-    ? `<ol class="comments">${comments.map(c => `
-        <li class="comment">
-          <p class="meta"><strong>${esc(c.authorName)}</strong> <span class="tag">${esc(KIND_LABEL[c.kind])}</span> ${esc(fmtDateTime(c.createdAt))}</p>
-          <p class="comment__body">${esc(c.body)}</p>
-          ${c.sourceUrl ? `<p><a href="${esc(c.sourceUrl)}" target="_blank" rel="noopener noreferrer">Source</a></p>` : ''}
-        </li>`).join('')}</ol>`
-    : '<p class="empty">No general discussion yet. Start it with a question.</p>';
-  const form = canPost ? `
-    <form id="place-composer" class="composer">
-      <div class="field">
-        <label for="pc-kind">Type</label>
-        <select id="pc-kind" name="kind" class="input">
-          ${COMMENT_KINDS.map(k => `<option value="${esc(k.value)}">${esc(k.label)}</option>`).join('')}
-        </select>
-      </div>
-      <div class="field">
-        <label for="pc-text">Your message</label>
-        <textarea id="pc-text" name="body" class="input" rows="3" required></textarea>
-      </div>
-      <div class="field">
-        <label for="pc-source">Source link <span class="muted">(required for information)</span></label>
-        <input id="pc-source" name="source" class="input" type="url" placeholder="https://">
-      </div>
-      <div class="row"><button class="btn btn--primary" type="submit">Post</button></div>
-      <p class="form-error" role="alert"></p>
-    </form>`
-    : '<p class="row__meta">Residents of this place can post here. Everyone can read.</p>';
-  return list + form;
+function listBlock(title, items, emptyText) {
+  return `
+    <section class="stack" aria-label="${esc(title)}">
+      <h2>${esc(title)}</h2>
+      ${items.length ? `<ul class="rows">${items.map(b => bodyRow(b)).join('')}</ul>` : empty(emptyText)}
+    </section>`;
 }
 
 export async function render(root, [id]) {
@@ -102,7 +70,7 @@ export async function render(root, [id]) {
     listOfficials(id),
     listCommunityMeetings(id),
     listPlaces(state.me.placeIds),
-    listPlaceComments(id),
+    listDiscussion('place', id),
   ]);
   const canPost = state.me.placeIds.includes(id);
   const localPlaces = place.kind === 'council_district'
@@ -113,47 +81,72 @@ export async function render(root, [id]) {
     <header class="place-head">
       <p class="crumbs">${parent ? `<a href="#/place/${esc(parent.id)}">${esc(parent.name)}</a> / ` : ''}${esc(KIND[place.kind] ?? place.kind)}</p>
       <h1>${esc(place.name)}</h1>
+      <p class="lead">${canPost ? 'You live here. You can join the discussion.' : 'Read-only. Residents of this place can join the discussion.'}</p>
     </header>
 
-    <section class="stack" aria-labelledby="general-h">
-      <h2 id="general-h">General discussion</h2>
-      <div id="place-comments">${discussionHtml(comments, canPost)}</div>
-    </section>
-
-    <div id="groups" class="groups">${groupsHtml(buildRows(place, bodies, localPlaces))}</div>
-
-    ${officials.length ? `
-      <section class="group" aria-labelledby="rep-h">
-        <h2 id="rep-h">Representation</h2>
-        ${officials.map(o => `
-          <article class="card">
-            <p class="row__meta">${esc(o.role)}</p>
-            <p class="row__name">${o.name ? esc(o.name) : 'Name to be added'}</p>
-            ${o.officeUrl ? `<p><a href="${esc(o.officeUrl)}" target="_blank" rel="noopener noreferrer">Official page</a></p>` : ''}
-          </article>`).join('')}
+    ${localPlaces.length ? `
+      <section class="stack" aria-label="Your local district">
+        <h2>Your local district</h2>
+        <ul class="rows">
+          ${localPlaces.map(p => `
+            <li class="row">
+              <div class="row__text">
+                <span class="row__name">${esc(p.name)} threads</span>
+                <span class="row__meta">Local discussions for this district</span>
+              </div>
+              ${pinButton({ kind: 'district', id: p.id, name: p.name, pinned: state.me.placeIds.includes(p.id), action: 'join-district' })}
+            </li>`).join('')}
+        </ul>
       </section>` : ''}
 
-    <section class="group" aria-labelledby="cm-h">
-      <h2 id="cm-h">Upcoming community meetings</h2>
+    <section class="stack" aria-labelledby="gov-h">
+      <h2 id="gov-h">Governing bodies</h2>
+      ${governingHtml(bodies)}
+    </section>
+
+    ${listBlock('Community groups', bodies.filter(b => b.kind === 'community'), 'No community groups listed here yet.')}
+    ${listBlock('Citywide boards and commissions', bodies.filter(b => b.kind === 'board'), 'No boards or commissions listed here yet.')}
+
+    ${officials.length ? `
+      <section class="stack" aria-labelledby="rep-h">
+        <h2 id="rep-h">Representation</h2>
+        <div class="card-grid">
+          ${officials.map(o => `
+            <article class="card">
+              <p class="meta">${esc(o.role)}</p>
+              <p class="row__name">${o.name ? esc(o.name) : 'Name to be added'}</p>
+              ${o.officeUrl ? `<p><a href="${esc(o.officeUrl)}" target="_blank" rel="noopener noreferrer">Official page</a></p>` : ''}
+            </article>`).join('')}
+        </div>
+      </section>` : ''}
+
+    <section class="stack" aria-labelledby="cm-h">
+      <h2 id="cm-h">Community meetings</h2>
       ${meetings.length ? `
         <ul class="rows">
           ${meetings.slice(0, 5).map(m => `
             <li class="row">
               <div class="row__text">
-                <p class="row__name">${esc(m.title)}</p>
-                <p class="row__meta">${esc(fmtDateTime(m.startsAt, true))}${m.location ? ` · ${esc(m.location)}` : ''}</p>
-                ${m.detailsUrl ? `<p><a href="${esc(m.detailsUrl)}" target="_blank" rel="noopener noreferrer">Details and sign-up</a></p>` : ''}
+                <a class="row__name" href="#/meeting/${esc(m.id)}">${esc(m.title)}</a>
+                <span class="row__meta">${esc(fmtDateTime(m.startsAt, true))}${m.location ? ` · ${esc(m.location)}` : ''}</span>
               </div>
               ${pinButton({ kind: 'meeting', id: m.id, name: m.title, pinned: state.pins.meeting.has(m.id) })}
             </li>`).join('')}
         </ul>` : empty('No community meetings listed yet.')}
     </section>
 
+    <section class="stack discussion" aria-labelledby="disc-h">
+      <h2 id="disc-h">Discussion for ${esc(place.name)}</h2>
+      <div id="discussion">${discussionHtml(comments, { scope: 'place', id, canPost })}</div>
+    </section>
+
     ${place.sourceUrl ? `<p class="links"><a href="${esc(place.sourceUrl)}" target="_blank" rel="noopener noreferrer">Official source for this place</a></p>` : ''}`;
 
   bindPins(root, () => {});
+  bindDiscussion(root);
+  root.addEventListener('discussion:posted', () => renderDiscussion(root.querySelector('#discussion'), { scope: 'place', id, canPost }));
 
-  // Joining your district: membership in the place's threads.
+  // Joining a local district is membership in its threads. It saves to the profile like the location step does.
   root.addEventListener('click', async e => {
     const btn = e.target.closest('[data-action="join-district"]');
     if (!btn) return;
@@ -171,31 +164,6 @@ export async function render(root, [id]) {
       toast(err.message, 'error');
     } finally {
       btn.disabled = false;
-    }
-  });
-
-  // General discussion: residents only. The database checks residency too.
-  root.addEventListener('submit', async e => {
-    if (e.target.id !== 'place-composer') return;
-    e.preventDefault();
-    const form = e.target;
-    const data = new FormData(form);
-    const kind = data.get('kind');
-    const body = String(data.get('body') || '').trim();
-    const source = String(data.get('source') || '').trim();
-    const errorEl = form.querySelector('.form-error');
-    errorEl.textContent = '';
-    if (!body) { errorEl.textContent = 'Write your message first.'; return; }
-    if (kind === 'information' && !/^https:\/\/\S+$/.test(source)) {
-      errorEl.textContent = 'Information needs a source link that starts with https://';
-      return;
-    }
-    try {
-      await addPlaceComment({ userId: state.me.id, placeId: id, kind, body, sourceUrl: source });
-      root.querySelector('#place-comments').innerHTML = discussionHtml(await listPlaceComments(id), canPost);
-      toast('Posted');
-    } catch (err) {
-      errorEl.textContent = err.message;
     }
   });
 }

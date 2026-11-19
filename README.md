@@ -2,6 +2,11 @@
 
 Helps people see which governing bodies affect them, when they meet, what is on each agenda, where each item stands, and how to talk about it with neighbors.
 
+## Redesign (current)
+Home shows upcoming meetings and agenda items beside active discussions across items, meetings, bodies, community groups, and places. Places list governing bodies by level, subcommittees under their parent, community groups, boards, representation, and place discussion. Meetings have their own page with a discussion. Discussions use one shared panel (`components/discussion.js`) and one service (`services/discussions.js`).
+
+Run `supabase/migration-5.sql` after migration-4. It adds fictional U.S. House and state senate districts, subcommittees, community groups, and the discussion tables.
+
 ## Status
 Working:
 - Nickname sign-in (no password)

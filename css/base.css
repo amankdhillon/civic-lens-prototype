@@ -5,7 +5,7 @@ html { -webkit-text-size-adjust: 100%; }
 
 body {
   margin: 0;
-  font: 16px/1.55 var(--font);
+  font: 17px/1.6 var(--font);
   color: var(--ink);
   background: var(--bg);
 }

@@ -6,26 +6,26 @@
   --navy-hover: #142038;
   --red: #9e1b32;              /* primary actions. 7.9:1 with white text */
   --red-hover: #7a1426;
-  --off-white: #f8f5ee;        /* page background */
+  --off-white: #f1f3f6;        /* light gray page background */
 
   /* Surfaces and text */
   --bg: var(--off-white);
   --surface: #ffffff;
-  --surface-2: #f2eee4;
+  --surface-2: #f5f6f9;
   --ink: var(--navy);
   --ink-2: #33405c;
-  --muted: #5a6478;            /* 5.4:1 on off-white */
-  --line: #d9d3c4;             /* decorative dividers only */
-  --border-control: #7d8496;   /* input and checkbox borders need 3:1 */
+  --muted: #4f5a6d;            /* about 6:1 on the light gray page */
+  --line: #d5dae3;             /* decorative dividers only */
+  --border-control: #6b7385;   /* input and checkbox borders need 3:1 */
 
   /* Brand roles */
   --brand: var(--red);
   --brand-hover: var(--red-hover);
   --brand-ink: #ffffff;
-  --brand-soft: #f4e2e5;
-  --navy-soft: #e3e8f1;
+  --brand-soft: #f6e4e7;
+  --navy-soft: #e4e9f2;
   --topbar-bg: var(--navy);
-  --topbar-ink: var(--off-white);  /* 13:1 on navy */
+  --topbar-ink: #ffffff;           /* 14:1 on navy */
   --focus: var(--red);
 
   /* Status. Each pairs with its soft background at 7:1 or better */
