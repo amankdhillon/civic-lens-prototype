@@ -48,22 +48,10 @@ insert into body_places (body_id, place_id) values ('sdcc', 'sdcc-9') on conflic
 insert into body_places (body_id, place_id) values ('cpg-uptown', 'cpg-uptown') on conflict do nothing;
 
 -- Meetings (agenda items are loaded by the app from city-data.js)
-insert into meetings (id, body_id, starts_at, title) values ('cal-2026-11-05-cpg', 'cpg-uptown', '2026-11-05T18:00:00-08:00', 'Regular meeting') on conflict (id) do nothing;
-insert into meetings (id, body_id, starts_at, title) values ('cal-2026-11-09-council-am', 'sdcc', '2026-11-09T10:00:00-08:00', 'City Council (closed session on Monday)') on conflict (id) do nothing;
-insert into meetings (id, body_id, starts_at, title) values ('cal-2026-11-09-council-pm', 'sdcc', '2026-11-09T14:00:00-08:00', 'City Council') on conflict (id) do nothing;
-insert into meetings (id, body_id, starts_at, title) values ('cal-2026-11-10-council-am', 'sdcc', '2026-11-10T10:00:00-08:00', 'City Council') on conflict (id) do nothing;
 insert into meetings (id, body_id, starts_at, title) values ('cal-2026-11-10-council-pm', 'sdcc', '2026-11-10T14:00:00-08:00', 'City Council') on conflict (id) do nothing;
-insert into meetings (id, body_id, starts_at, title) values ('cal-2026-11-10-bos', 'bos', '2026-11-10T09:00:00-08:00', 'Board of Supervisors regular meeting') on conflict (id) do nothing;
-insert into meetings (id, body_id, starts_at, title) values ('cal-2026-11-16-council-am', 'sdcc', '2026-11-16T10:00:00-08:00', 'City Council (closed session on Monday)') on conflict (id) do nothing;
-insert into meetings (id, body_id, starts_at, title) values ('cal-2026-11-16-council-pm', 'sdcc', '2026-11-16T14:00:00-08:00', 'City Council') on conflict (id) do nothing;
-insert into meetings (id, body_id, starts_at, title) values ('cal-2026-11-17-council-am', 'sdcc', '2026-11-17T10:00:00-08:00', 'City Council') on conflict (id) do nothing;
-insert into meetings (id, body_id, starts_at, title) values ('cal-2026-11-17-council-pm', 'sdcc', '2026-11-17T14:00:00-08:00', 'City Council') on conflict (id) do nothing;
 insert into meetings (id, body_id, starts_at, title) values ('cal-2026-11-17-bos', 'bos', '2026-11-17T09:00:00-08:00', 'Board of Supervisors regular meeting') on conflict (id) do nothing;
 insert into meetings (id, body_id, starts_at, title) values ('cal-2026-11-19-cpg', 'cpg-uptown', '2026-11-19T18:00:00-08:00', 'Regular meeting') on conflict (id) do nothing;
-insert into meetings (id, body_id, starts_at, title) values ('cal-2026-11-30-council-am', 'sdcc', '2026-11-30T10:00:00-08:00', 'City Council (closed session on Monday)') on conflict (id) do nothing;
 insert into meetings (id, body_id, starts_at, title) values ('cal-2026-12-01-council-pm', 'sdcc', '2026-12-01T14:00:00-08:00', 'City Council') on conflict (id) do nothing;
-insert into meetings (id, body_id, starts_at, title) values ('cal-2026-12-03-cpg', 'cpg-uptown', '2026-12-03T18:00:00-08:00', 'Regular meeting') on conflict (id) do nothing;
-insert into meetings (id, body_id, starts_at, title) values ('cal-2026-12-07-council-pm', 'sdcc', '2026-12-07T14:00:00-08:00', 'City Council') on conflict (id) do nothing;
 insert into meetings (id, body_id, starts_at, title) values ('cal-2026-12-08-bos', 'bos', '2026-12-08T09:00:00-08:00', 'Board of Supervisors regular meeting') on conflict (id) do nothing;
 
 -- Sample discussions (no author account; each post keeps its sample name)
@@ -121,9 +109,6 @@ insert into discussion_posts (id, thread_id, author_name, body, created_at) valu
 insert into discussion_threads (id, scope_kind, scope_id, title, kind, author_name, created_at) values ('adcb655f-edde-473d-8248-a256b49bba7e', 'place', 'cpg-uptown', 'Short-term rental complaints on our blocks', 'question', 'Jamal R.', '2026-11-13T12:00:00-08:00') on conflict (id) do nothing;
 insert into discussion_posts (id, thread_id, author_name, body, created_at) values ('5ef696ed-e4ff-4388-8bd1-497d78d5d677', 'adcb655f-edde-473d-8248-a256b49bba7e', 'Jamal R.', 'Who handles noise complaints at short-term rentals?', '2026-11-13T12:00:00-08:00') on conflict (id) do nothing;
 insert into discussion_posts (id, thread_id, author_name, body, created_at) values ('b2ee87d6-f80a-493d-8bbc-493ed07305b1', 'adcb655f-edde-473d-8248-a256b49bba7e', 'Helen W.', 'Code enforcement handles the rental permits. Police handle loud parties. The group hears a quarterly report.', '2026-11-14T12:00:00-08:00') on conflict (id) do nothing;
-insert into discussion_threads (id, scope_kind, scope_id, title, kind, author_name, created_at) values ('a8b4e4b0-0c85-4759-8011-7e5be4732fdb', 'meeting', 'cal-2026-11-17-council-pm', 'What does the stormwater report mean for my street?', 'question', 'Greg H.', '2026-11-17T12:00:00-08:00') on conflict (id) do nothing;
-insert into discussion_posts (id, thread_id, author_name, body, created_at) values ('12e485c5-e882-4917-8b75-2e23297c7e23', 'a8b4e4b0-0c85-4759-8011-7e5be4732fdb', 'Greg H.', 'The annual report lists runoff sites. Any way to check ours?', '2026-11-17T12:00:00-08:00') on conflict (id) do nothing;
-insert into discussion_posts (id, thread_id, author_name, body, created_at) values ('34e20586-9721-43d9-8a11-12c1dc69ab41', 'a8b4e4b0-0c85-4759-8011-7e5be4732fdb', 'Priya S.', 'The report has a map on page 9. Look up your address range.', '2026-11-18T12:00:00-08:00') on conflict (id) do nothing;
 insert into discussion_threads (id, scope_kind, scope_id, title, kind, author_name, created_at) values ('fef49ef9-fcb1-4ae8-8776-1f207a5d072c', 'meeting', 'cal-2026-12-01-council-pm', 'Who is speaking on the public comment rules?', 'question', 'Renee B.', '2026-11-17T12:00:00-08:00') on conflict (id) do nothing;
 insert into discussion_posts (id, thread_id, author_name, body, created_at) values ('c64a9aec-8c46-47aa-8ce6-a65dbaeacac1', 'fef49ef9-fcb1-4ae8-8776-1f207a5d072c', 'Renee B.', 'Planning to speak December 1 about the two-minute limit. Tips?', '2026-11-17T12:00:00-08:00') on conflict (id) do nothing;
 insert into discussion_posts (id, thread_id, author_name, body, created_at) values ('73e8c6a0-6311-401c-8e22-0a9ee4354d0d', 'fef49ef9-fcb1-4ae8-8776-1f207a5d072c', 'Owen M.', 'Sign up with the clerk before the item is called. Bring a written copy too.', '2026-11-18T12:00:00-08:00') on conflict (id) do nothing;

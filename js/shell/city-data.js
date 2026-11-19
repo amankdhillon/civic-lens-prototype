@@ -200,89 +200,6 @@ const BODIES={
 };
 const MEETINGS=[
  {
-  "id": "cal-2026-11-05-cpg",
-  "body": "cpg-uptown",
-  "date": "2026-11-05",
-  "time": "6:00 p.m.",
-  "title": "Regular meeting",
-  "source": "",
-  "checked": "",
-  "items": [
-   {
-    "id": "it-1105-1",
-    "title": "Hillcrest mixed-use project, development permit review",
-    "action": "Advisory",
-    "summary": "Reviews building height, parking, and street-level design for a six-story mixed-use proposal.",
-    "result": "Recommended with conditions",
-    "stakes": "Neighbors of the Hillcrest site: building height and parking decisions affect shade, traffic, and street parking."
-   },
-   {
-    "id": "it-1105-2",
-    "title": "Bylaws update",
-    "action": "Advisory",
-    "summary": "Updates meeting notice rules and officer terms.",
-    "result": "Adopted",
-    "stakes": "Planning group members: the bylaws set meeting notice rules and officer terms."
-   }
-  ]
- },
- {
-  "id": "cal-2026-11-09-council-am",
-  "body": "sdcc",
-  "date": "2026-11-09",
-  "time": "10:00 a.m.",
-  "title": "City Council (closed session on Monday)",
-  "items": [],
-  "source": "https://www.sandiego.gov/city-clerk/officialdocs/meetings-calendar",
-  "checked": "2026-11-18"
- },
- {
-  "id": "cal-2026-11-09-council-pm",
-  "body": "sdcc",
-  "date": "2026-11-09",
-  "time": "2:00 p.m.",
-  "title": "City Council",
-  "items": [
-   {
-    "id": "it-1109-1",
-    "title": "Street repaving contract amendment, Districts 3 and 6",
-    "action": "Final decision",
-    "summary": "Adds $4.2 million to the existing arterial paving contract for Districts 3 and 6.",
-    "result": "Adopted, 9-0",
-    "stakes": "Drivers and bus riders on the listed arterials: the $4.2 million pays for repaving, which likely means lane closures on those streets."
-   },
-   {
-    "id": "it-1109-2",
-    "title": "Weekend construction hours, noise ordinance update",
-    "action": "Final decision",
-    "summary": "Sets a Saturday construction window that starts at 8 a.m. and adds a 48-hour permit notice.",
-    "result": "Adopted, 7-2",
-    "stakes": "Neighbors of construction sites: Saturday work could start at 8 a.m. and requires 48 hours' notice to nearby residents."
-   }
-  ],
-  "source": "https://www.sandiego.gov/city-clerk/officialdocs/meetings-calendar",
-  "checked": "2026-11-18"
- },
- {
-  "id": "cal-2026-11-10-council-am",
-  "body": "sdcc",
-  "date": "2026-11-10",
-  "time": "10:00 a.m.",
-  "title": "City Council",
-  "items": [
-   {
-    "id": "it-1110-1",
-    "title": "Balboa Park north entrance: trail and lighting funding",
-    "action": "Final decision",
-    "summary": "Allocates $650,000 for trail repairs and lighting at the north entrance.",
-    "result": "Approved, 9-0",
-    "stakes": "People who use the north entrance of Balboa Park: the $650,000 pays for trail repairs and lighting there."
-   }
-  ],
-  "source": "https://www.sandiego.gov/city-clerk/officialdocs/meetings-calendar",
-  "checked": "2026-11-18"
- },
- {
   "id": "cal-2026-11-10-council-pm",
   "body": "sdcc",
   "date": "2026-11-10",
@@ -295,7 +212,8 @@ const MEETINGS=[
     "action": "Final decision",
     "summary": "Moves $18 million from reserves to road and sidewalk repair. The staff summary is linked from the item page.",
     "result": "Adopted, 6-3",
-    "stakes": "Anyone who depends on road and sidewalk repair: $18 million moves out of reserves for those repairs, so reserves shrink by that amount."
+    "stakes": "Anyone who depends on road and sidewalk repair: $18 million moves out of reserves for those repairs, so reserves shrink by that amount.",
+    "accountable": "City Council voted on the budget amendment. The Finance department carries out the transfer."
    },
    {
     "id": "it-1110-3",
@@ -303,109 +221,8 @@ const MEETINGS=[
     "action": "Advisory",
     "summary": "Informational report on complaints, inspections, and permit revocations citywide.",
     "result": "Received",
-    "stakes": "Neighbors of short-term rentals: the report summarizes complaints and permit actions and does not change any rule."
-   }
-  ],
-  "source": "https://www.sandiego.gov/city-clerk/officialdocs/meetings-calendar",
-  "checked": "2026-11-18"
- },
- {
-  "id": "cal-2026-11-10-bos",
-  "body": "bos",
-  "date": "2026-11-10",
-  "time": "9:00 a.m.",
-  "title": "Board of Supervisors regular meeting",
-  "source": "",
-  "checked": "",
-  "items": [
-   {
-    "id": "it-1110b-1",
-    "title": "Behavioral health beds, North County campus",
-    "action": "Final decision",
-    "summary": "Approves operating funds for 40 short-term behavioral health beds.",
-    "result": "Approved, 5-0",
-    "stakes": "People in North County who need short-term behavioral health care: the 40 beds would be funded to open."
-   },
-   {
-    "id": "it-1110b-2",
-    "title": "Library hours restored at rural branches",
-    "action": "Final decision",
-    "summary": "Restores weekend hours at six rural branch libraries.",
-    "result": "Approved, 4-1",
-    "stakes": "Rural library users: weekend hours return at six branches."
-   }
-  ]
- },
- {
-  "id": "cal-2026-11-16-council-am",
-  "body": "sdcc",
-  "date": "2026-11-16",
-  "time": "10:00 a.m.",
-  "title": "City Council (closed session on Monday)",
-  "items": [],
-  "source": "https://www.sandiego.gov/city-clerk/officialdocs/meetings-calendar",
-  "checked": "2026-11-18"
- },
- {
-  "id": "cal-2026-11-16-council-pm",
-  "body": "sdcc",
-  "date": "2026-11-16",
-  "time": "2:00 p.m.",
-  "title": "City Council",
-  "items": [
-   {
-    "id": "it-1116-1",
-    "title": "Council public comment rules",
-    "action": "Final decision",
-    "summary": "Proposes changing general public comment from three minutes to two, and scheduled items from two minutes to three.",
-    "result": "Continued to Dec 1",
-    "stakes": "Anyone who speaks at council: general public comment would drop from three minutes to two if the rule is adopted."
-   }
-  ],
-  "source": "https://www.sandiego.gov/city-clerk/officialdocs/meetings-calendar",
-  "checked": "2026-11-18"
- },
- {
-  "id": "cal-2026-11-17-council-am",
-  "body": "sdcc",
-  "date": "2026-11-17",
-  "time": "10:00 a.m.",
-  "title": "City Council",
-  "items": [
-   {
-    "id": "it-1117-1",
-    "title": "Affordable housing fee waiver, 5th Avenue project",
-    "action": "Final decision",
-    "summary": "Waives certain impact fees for 84 affordable units.",
-    "result": "Approved, 7-2",
-    "stakes": "Developers and future tenants of 84 affordable units: the waived fees lower the cost of building them."
-   }
-  ],
-  "source": "https://www.sandiego.gov/city-clerk/officialdocs/meetings-calendar",
-  "checked": "2026-11-18"
- },
- {
-  "id": "cal-2026-11-17-council-pm",
-  "body": "sdcc",
-  "date": "2026-11-17",
-  "time": "2:00 p.m.",
-  "title": "City Council",
-  "items": [
-   {
-    "id": "it-1117-2",
-    "title": "Annual stormwater permit report",
-    "action": "Advisory",
-    "summary": "Staff reports on runoff inspections and on sites with repeated violations, with a map by council district.",
-    "result": "Received and filed",
-    "stakes": "Businesses and homes near sites with repeat runoff violations: the report can lead to inspections and enforcement."
-   },
-   {
-    "id": "it-1117-3",
-    "title": "Park cleanup volunteer program",
-    "action": "Advisory",
-    "summary": "Summarizes volunteer hours and proposes a neighborhood cleanup grant.",
-    "result": "Received",
-    "stakes": "Volunteers and neighborhood groups: the program funds cleanup grants that groups can apply for."
+    "stakes": "Neighbors of short-term rentals: the report summarizes complaints and permit actions and does not change any rule.",
+    "accountable": "City Council received this report. Code enforcement and police handle the complaints."
    }
   ],
   "source": "https://www.sandiego.gov/city-clerk/officialdocs/meetings-calendar",
@@ -426,7 +243,8 @@ const MEETINGS=[
     "action": "Final decision",
     "summary": "Adds 600 winter shelter beds across county-contracted sites.",
     "result": "Approved, 5-0",
-    "stakes": "People without shelter this winter: 600 winter beds would be added at county-contracted sites."
+    "stakes": "People without shelter this winter: 600 winter beds would be added at county-contracted sites.",
+    "accountable": "Board of Supervisors approved the contract. County health and housing staff manage the shelters."
    },
    {
     "id": "it-1117b-2",
@@ -434,7 +252,8 @@ const MEETINGS=[
     "action": "Advisory",
     "summary": "Annual maintenance backlog report with a list of trails scheduled for repair.",
     "result": "Received",
-    "stakes": "People who use county trails: the report lists which trails are scheduled for repair."
+    "stakes": "People who use county trails: the report lists which trails are scheduled for repair.",
+    "accountable": "Board of Supervisors received this report. County parks staff schedule the repairs."
    }
   ]
  },
@@ -452,33 +271,26 @@ const MEETINGS=[
     "title": "Park Boulevard corridor plan: presentation",
     "action": "Advisory",
     "summary": "City staff presents the corridor plan for bike lanes, crossings, and parking changes, and asks for comments.",
-    "stakes": "Cyclists, drivers, and businesses on Park Boulevard: the plan would change bike lanes, crossings, and parking."
+    "stakes": "Cyclists, drivers, and businesses on Park Boulevard: the plan would change bike lanes, crossings, and parking.",
+    "accountable": "Park Boulevard planning group recommends. The City Planning department prepares the plan, and City Council makes the final decision."
    },
    {
     "id": "it-1119-2",
     "title": "Short-term rental complaints report",
     "action": "Advisory",
     "summary": "Code enforcement report on complaints in the planning area over the last quarter.",
-    "stakes": "Neighbors of short-term rentals: the report shows complaint volume in the planning area."
+    "stakes": "Neighbors of short-term rentals: the report shows complaint volume in the planning area.",
+    "accountable": "Code enforcement presents the report. The planning group reviews it."
    },
    {
     "id": "it-1119-3",
     "title": "Officer elections",
     "action": "Advisory",
     "summary": "Election of chair and vice chair for the coming year.",
-    "stakes": "Planning group members: the election picks who leads and speaks for the group next year."
+    "stakes": "Planning group members: the election picks who leads and speaks for the group next year.",
+    "accountable": "Planning group members elect their own chair and vice chair."
    }
   ]
- },
- {
-  "id": "cal-2026-11-30-council-am",
-  "body": "sdcc",
-  "date": "2026-11-30",
-  "time": "10:00 a.m.",
-  "title": "City Council (closed session on Monday)",
-  "source": "",
-  "checked": "",
-  "items": []
  },
  {
   "id": "cal-2026-12-01-council-pm",
@@ -494,71 +306,24 @@ const MEETINGS=[
     "title": "Council public comment rules (continued from Nov 16)",
     "action": "Final decision",
     "summary": "Second reading of the speaking time rules. Staff proposes two minutes for general comment and three minutes for scheduled items.",
-    "stakes": "Everyone who wants to speak at council meetings: if the rule passes, the new time limits apply at future meetings."
+    "stakes": "Everyone who wants to speak at council meetings: if the rule passes, the new time limits apply at future meetings.",
+    "accountable": "City Council votes on its own public comment rules."
    },
    {
     "id": "it-1201-2",
     "title": "Traffic calming, 30th Street between Upas and University",
     "action": "Final decision",
     "summary": "Approves the design and $1.1 million for speed humps, a crossing signal, and a pilot bike lane.",
-    "stakes": "Drivers, people walking, and bike riders on 30th Street: humps, a crossing signal, and a pilot bike lane would be built."
+    "stakes": "Drivers, people walking, and bike riders on 30th Street: humps, a crossing signal, and a pilot bike lane would be built.",
+    "accountable": "City Council approves the design and funding. Transportation staff carry out the work."
    },
    {
     "id": "it-1201-3",
     "title": "Outreach funding for recognized community planning groups",
     "action": "Advisory",
     "summary": "Proposes annual outreach funding for recognized planning groups, including translation support.",
-    "stakes": "Community planning groups and their neighbors: the funding would pay for notices and translation for outreach."
-   }
-  ]
- },
- {
-  "id": "cal-2026-12-03-cpg",
-  "body": "cpg-uptown",
-  "date": "2026-12-03",
-  "time": "6:00 p.m.",
-  "title": "Regular meeting",
-  "source": "",
-  "checked": "",
-  "items": [
-   {
-    "id": "it-1203-1",
-    "title": "Recommendation on the Park Boulevard corridor plan",
-    "action": "Advisory",
-    "summary": "Vote on a recommendation to the City on the corridor plan.",
-    "stakes": "Residents along Park Boulevard: the group's recommendation goes to the City with its vote count."
-   },
-   {
-    "id": "it-1203-2",
-    "title": "Holiday open house and outreach plan",
-    "action": "Advisory",
-    "summary": "Plans a December open house and a schedule for flyers and online notices.",
-    "stakes": "Neighbors who want to hear about group decisions: the plan sets how notices reach them."
-   }
-  ]
- },
- {
-  "id": "cal-2026-12-07-council-pm",
-  "body": "sdcc",
-  "date": "2026-12-07",
-  "time": "2:00 p.m.",
-  "title": "City Council",
-  "source": "",
-  "checked": "",
-  "items": [
-   {
-    "id": "it-1207-1",
-    "title": "Police response times by council district",
-    "action": "Advisory",
-    "summary": "Staff proposes a monthly response-time report by council district, starting in January.",
-    "stakes": "Residents who call for police help: a monthly report would show response times by council district."
-   },
-   {
-    "id": "it-1207-2",
-    "title": "Accessory dwelling unit impact fee study",
-    "action": "Final decision",
-    "summary": "Directs staff to return with fee options that treat units under 800 square feet differently.",
-    "stakes": "People planning to build small homes: the study could change the fees for units under 800 square feet."
+    "stakes": "Community planning groups and their neighbors: the funding would pay for notices and translation for outreach.",
+    "accountable": "City Council votes on the funding. Recognized planning groups receive and spend it."
    }
   ]
  },
@@ -576,14 +341,16 @@ const MEETINGS=[
     "title": "Six-month transit fare pilot on County routes",
     "action": "Final decision",
     "summary": "Proposes reduced fares for youth and seniors on county-operated routes for six months.",
-    "stakes": "Youth and seniors who ride county routes: fares would drop for six months if the pilot passes."
+    "stakes": "Youth and seniors who ride county routes: fares would drop for six months if the pilot passes.",
+    "accountable": "Board of Supervisors votes on the pilot. County transit staff run the routes."
    },
    {
     "id": "it-1208-2",
     "title": "Emergency medical services contract renewal",
     "action": "Final decision",
     "summary": "Renews the ambulance services contract for three years with a new response-time standard.",
-    "stakes": "Anyone who calls for an ambulance: the contract sets a new response-time standard for three years."
+    "stakes": "Anyone who calls for an ambulance: the contract sets a new response-time standard for three years.",
+    "accountable": "Board of Supervisors votes on the contract. County emergency services staff monitor response times."
    }
   ]
  }

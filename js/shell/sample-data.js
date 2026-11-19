@@ -50,8 +50,6 @@ const SEED_BOARDS={
     T('t6','Park cleanup Saturday, who is coming?','question',[P('Marcus T.','Meeting at the north entrance at 9. Bring gloves.','2026-11-15'),P('Helen W.','I can bring extra bags and a rake.','2026-11-16')])]},
   'place:cpg-uptown':{threads:[
     T('t20','Short-term rental complaints on our blocks','question',[P('Jamal R.','Who handles noise complaints at short-term rentals?','2026-11-13'),P('Helen W.','Code enforcement handles the rental permits. Police handle loud parties. The group hears a quarterly report.','2026-11-14')])]},
-  'meet:cal-2026-11-17-council-pm':{threads:[
-    T('t21','What does the stormwater report mean for my street?','question',[P('Greg H.','The annual report lists runoff sites. Any way to check ours?','2026-11-17'),P('Priya S.','The report has a map on page 9. Look up your address range.','2026-11-18')])]},
   'meet:cal-2026-12-01-council-pm':{threads:[
     T('t22','Who is speaking on the public comment rules?','question',[P('Renee B.','Planning to speak December 1 about the two-minute limit. Tips?','2026-11-17'),P('Owen M.','Sign up with the clerk before the item is called. Bring a written copy too.','2026-11-18')])]},
   'meet:cal-2026-11-19-cpg':{threads:[

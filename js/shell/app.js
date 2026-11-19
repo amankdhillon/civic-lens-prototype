@@ -1,9 +1,9 @@
-const TITLES={feed:'Feed',find:'Find my districts',bodies:'Bodies',body:'Body',meetings:'Meetings',calendar:'My calendar',meeting:'Meeting',boards:'Your discussion boards',allboards:'All discussion boards',board:'Discussion board',thread:'Thread'};
-const NAV_ON={feed:'feed',find:'find',bodies:'bodies',body:'bodies',meetings:'meetings',meeting:'meetings',calendar:'calendar',boards:'boards',allboards:'boards',board:'boards',thread:'boards'};
+const TITLES={feed:'Feed',find:'Find my districts',bodies:'Bodies',body:'Body',meetings:'Meetings',calendar:'My calendar',meeting:'Meeting',boards:'Your discussion boards',allboards:'All discussion boards',board:'Discussion board',thread:'Thread',item:'Agenda item'};
+const NAV_ON={feed:'feed',find:'find',bodies:'bodies',body:'bodies',meetings:'meetings',meeting:'meetings',calendar:'calendar',boards:'boards',allboards:'boards',board:'boards',thread:'boards',item:'meetings'};
 
 const state={screen:'signin',user:'',error:'',addr:null,page:'feed',navOpen:true,toggles:{fed:true,county:true,city:true,school:true,cpg:true},
   bodyId:null,meetingId:null,boardKey:null,threadId:null,query:'',boardQuery:'',drafts:{},followed:{},seq:100,
-  calendar:[],menuFor:null,remote:{threads:[],posts:[]},me:null,ready:false,postError:''};
+  calendar:[],menuFor:null,itemId:null,seen:'2026-11-01',remote:{threads:[],posts:[]},me:null,ready:false,postError:''};
 
 /* ---------- helpers ---------- */
 const fmtDate=d=>new Date(d+'T12:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'});
@@ -25,6 +25,7 @@ const threadLast=t=>t.posts.length?t.posts[t.posts.length-1].t:'';
 const postCount=k=>boardFor(k).threads.reduce((n,t)=>n+t.posts.length,0);
 const whenLabel=d=>{const x=new Date(d+'T12:00:00');return{wd:x.toLocaleDateString('en-US',{weekday:'short'}),day:x.toLocaleDateString('en-US',{month:'short',day:'numeric'})};};
 const explainCount=k=>boardFor(k).threads.filter(x=>x.kind==='information').length;
+const commentCount=k=>boardFor(k).threads.filter(x=>x.kind!=='information').length;
 const actLine=k=>{const st=boardStats(k),n=postCount(k);return `${st.count} thread${st.count===1?'':'s'} · ${n} post${n===1?'':'s'}${st.last?` · last post ${fmtShort(st.last)}`:''}`;};
 const boardStats=k=>{const th=boardFor(k).threads;const last=th.reduce((m,t)=>threadLast(t)>m?threadLast(t):m,'');return{count:th.length,last};};
 const findMeeting=id=>MEETINGS.find(m=>m.id===id);
@@ -147,7 +148,7 @@ function feedMeetingCard(m){
       <h3><button class="linkish" data-act="meeting" data-id="${m.id}">${esc(m.title)}</button></h3>
       <p>${n?`${n} agenda item${n===1?'':'s'}${fin?`, ${fin} final vote${fin===1?'':'s'} by this body`:''}: ${esc(m.items.slice(0,2).map(i=>i.title).join('; '))}${n>2?'; and more':''}.`:'The agenda has not been posted yet.'}</p>
       ${first?`<p class="small"><b>What it could do:</b> ${esc(first.stakes)}</p>`:''}
-      <div class="fi-foot">${addControls(m)}<button class="ghost" data-act="board" data-key="${esc(mk)}">Open meeting discussion (${boardStats(mk).count})</button></div>
+      <div class="fi-foot">${addControls(m)}<button class="ghost" data-act="meeting" data-id="${m.id}">Open meeting</button></div>
     </div></article>`;
 }
 function feedDecisionCard(m,i){
@@ -159,7 +160,7 @@ function feedDecisionCard(m,i){
       <h3><button class="linkish" data-act="meeting" data-id="${m.id}">${esc(i.title)}</button></h3>
       <p>${esc(i.summary)}</p>
       <p class="small"><b>What it did:</b> ${esc(i.stakes)}</p>
-      <div class="fi-foot"><span class="tag ok">Result: ${esc(i.result)}</span><button class="ghost" data-act="board" data-key="${esc(ik)}">Discuss this item (${boardStats(ik).count})</button></div>
+      <div class="fi-foot"><span class="tag ok">Result: ${esc(i.result)}</span><button class="ghost" data-act="item" data-id="${i.id}">Explanations and comments (${explainCount(ik)} explanation${explainCount(ik)===1?'':'s'})</button></div>
     </div></article>`;
 }
 function feedDiscussionCard(k){
@@ -175,17 +176,40 @@ function feedDiscussionCard(k){
     </div></article>`;
 }
 
+// Updates for you: replies and posts on threads you follow, plus new meetings and results for bodies you follow.
+const threadBoardKey=th=>th.scope_kind==='meeting'?'meet:'+th.scope_id:th.scope_kind+':'+th.scope_id;
+const followedThread=th=>!!(state.followed[threadBoardKey(th)]||state.followed['thread:'+th.id]);
+function feedNotices(){
+  const out=[], byId=Object.fromEntries(state.remote.threads.map(th=>[th.id,th]));
+  for(const p of state.remote.posts){
+    const th=byId[p.thread_id]; if(!th) continue;
+    const bk=threadBoardKey(th); if(!followedThread(th)||!knownKey(bk)) continue;
+    const day=p.created_at.slice(0,10);
+    if(day<=state.seen||p.author_name===state.user) continue;
+    out.push({day,text:`${p.author_name} ${th.kind==='information'?'wrote an explanation':'replied'} in "${th.title}"`,where:boardInfo(bk).title,
+      act:`<button class="ghost" data-act="thread" data-key="${esc(bk)}" data-id="${esc(th.id)}">Read</button>`});
+  }
+  for(const m of feedMeetings()){
+    if(m.date>state.seen) out.push({day:m.date,text:`New meeting: ${m.title}, ${fmtDate(m.date)}`,where:BODIES[m.body].name,
+      act:`<button class="ghost" data-act="meeting" data-id="${m.id}">Open meeting</button>`});
+    if(isPast(m)&&m.date>state.seen) for(const it of m.items.filter(i=>i.result)) out.push({day:m.date,text:`Result posted: ${it.title}`,where:`${BODIES[m.body].name}, ${fmtDate(m.date)}`,
+      act:`<button class="ghost" data-act="item" data-id="${it.id}">Open item</button>`});
+  }
+  return out.sort((x,y)=>y.day.localeCompare(x.day));
+}
+
 function viewFeed(){
-  if(!state.addr) return `<section class="card"><h1>Welcome, ${esc(state.user)}</h1><p class="muted">Find your districts first. Your feed shows meetings, decisions, and discussions for the bodies that represent you.</p><div class="bar"><button data-act="page" data-id="find">Find my districts</button></div></section>`;
-  const ms=feedMeetings();
-  const up=ms.filter(m=>!isPast(m)).sort(byAsc).slice(0,4);
-  const decisions=ms.filter(isPast).sort(byDesc).flatMap(m=>m.items.filter(i=>i.result).map(i=>({m,i}))).slice(0,4);
-  const boards=feedKeys().sort((a,b)=>boardStats(b).last.localeCompare(boardStats(a).last)).slice(0,4);
-  return `<p class="muted small feed-key">Official records come from city and county pages. Discussion comes from residents and is not an official record.</p>
+  if(!state.addr) return `<section class="card"><h1>Welcome, ${esc(state.user)}</h1><p class="muted">Find your districts first. Your feed shows updates, meetings, and decisions for the bodies that represent you.</p><div class="bar"><button data-act="page" data-id="find">Find my districts</button></div></section>`;
+  const notes=feedNotices(), ms=feedMeetings();
+  const up=ms.filter(m=>!isPast(m)).sort(byAsc);
+  const decisions=ms.filter(isPast).sort(byDesc).flatMap(m=>m.items.filter(i=>i.result).map(i=>({m,i})));
+  const list=notes.slice(0,8).map(n=>`<div class="notice"><div><b>${esc(n.text)}</b><div class="muted small">${esc(n.where)} · ${esc(fmtShort(n.day))}</div></div>${n.act}</div>`).join('');
+  return `<p class="muted small feed-key">Official records come from city and county pages. Replies and explanations come from residents and are not official records.</p>
+    <section class="card"><div class="sec-head"><h2>Updates for you</h2><span class="muted small">${notes.length} since ${esc(fmtShort(state.seen))}</span></div>
+      ${notes.length?list:'<p class="muted">No new replies or updates. Follow a thread, a body, or a meeting, and its updates appear here.</p>'}
+      <div class="bar"><button class="ghost" data-act="markread">Mark all as read</button><button class="ghost" data-act="page" data-id="boards">Your boards</button></div></section>
     <section class="card"><h2>Coming up</h2>${up.length?up.map(feedMeetingCard).join(''):'<p class="muted">No upcoming meetings for what you follow. <button class="linkish" data-act="page" data-id="meetings">Browse meetings</button></p>'}</section>
-    <section class="card"><h2>Recent decisions</h2>${decisions.length?decisions.map(({m,i})=>feedDecisionCard(m,i)).join(''):'<p class="muted">No recent decisions for what you follow yet.</p>'}</section>
-    <section class="card"><h2>Active discussions</h2>${boards.length?boards.map(feedDiscussionCard).join(''):'<p class="muted">Nothing you follow has discussion yet. Open a body, meeting, or agenda item and start a thread.</p>'}
-      <div class="bar"><button class="ghost" data-act="page" data-id="boards">All your boards</button></div></section>`;
+    <section class="card"><h2>Recent decisions</h2>${decisions.length?decisions.slice(0,2).map(({m,i})=>feedDecisionCard(m,i)).join(''):'<p class="muted">No recent decisions for what you follow yet.</p>'}</section>`;
 }
 
 function viewFind(){
@@ -292,14 +316,14 @@ function viewMeeting(){
     ? `${m.items.length} agenda item${m.items.length===1?'':'s'}: ${fin} final vote${fin===1?'':'s'} by this body and ${m.items.length-fin} advisory.${past&&resulted?` ${resulted} ${resulted===1?'has a':'have'} a recorded result.`:''}`
     : 'The agenda has not been loaded for this meeting.';
   const items=m.items.map((it,i)=>{
-    const ik='item:'+it.id, st=boardStats(ik), isFinal=it.action==='Final decision';
-    const ex=explainCount(ik);
+    const ik='item:'+it.id, isFinal=it.action==='Final decision', ex=explainCount(ik), cm=commentCount(ik);
     return `<li class="agenda-item"><span class="ai-num" aria-hidden="true">${i+1}</span><div class="ai-main">
       <h3>${esc(it.title)}</h3>
       <p class="tags"><span class="tag ${isFinal?'final':''}">${isFinal?'Final vote by this body':'Advisory'}</span>${past?(it.result?`<span class="tag ok">Passed or result: ${esc(it.result)}</span>`:''):'<span class="tag">Upcoming</span>'}</p>
       <p>${esc(it.summary)}</p>
       <p class="small"><b>${past?'What it did':'What it could do'}:</b> ${esc(it.stakes)}</p>
-      <div class="bar"><button class="ghost" data-act="board" data-key="${esc(ik)}">Discuss this item (${st.count} thread${st.count===1?'':'s'}, ${ex} plain explanation${ex===1?'':'s'})</button></div>
+      <p class="small"><b>Accountable:</b> ${esc(it.accountable||'Not yet recorded.')}</p>
+      <div class="bar"><button data-act="item" data-id="${it.id}">Open item: ${ex} explanation${ex===1?'':'s'}, ${cm} comment${cm===1?'':'s'}</button></div>
     </div></li>`;
   }).join('');
   return `<section class="card">
@@ -312,9 +336,9 @@ function viewMeeting(){
     </section>
     <section class="card"><h2>Overview</h2><p>${esc(overview)}</p>
       <p class="muted small">${m.source?`Source: <a href="${esc(m.source)}" target="_blank" rel="noopener">City Clerk meetings calendar</a>, checked ${esc(m.checked||'')}. Verify before relying on it.`:'Sample schedule and agenda for this prototype. Not from an official source.'}</p></section>
-    <section class="card"><h2>Agenda</h2><p class="muted small">Each item shows what it does or could do in plain language, then has its own discussion. Plain explanations are written by residents and are not official.</p>
+    <section class="card"><h2>Agenda</h2><p class="muted small">Open an item to read its plain summary, who is accountable, and residents' explanations. Comments on an item stay with that item.</p>
       ${items?`<ol class="agenda">${items}</ol>`:'<p class="muted">Agenda items have not been loaded for this meeting yet.</p>'}</section>
-    <section class="card"><h2>Meeting discussion</h2><p class="muted small">General comments about the meeting as a whole. Comments on a specific item stay with that item.</p>
+    <section class="card"><h2>Meeting discussion</h2><p class="muted small">General comments about the meeting as a whole.</p>
       <div class="bar"><button class="ghost" data-act="board" data-key="${esc(mk)}">Open meeting discussion (${ms.count} thread${ms.count===1?'':'s'})</button></div></section>`;
 }
 
@@ -348,22 +372,92 @@ function viewAllBoards(){
     <div id="board-list">${boardsHtml()}</div>`;
 }
 
-// Item panel on an agenda item's board: what it did or could do, and plain explanations written by residents.
-function itemPanel(k){
-  const [type,id]=splitKey(k);
-  if(type!=='item') return '';
-  const f=findItem(id); if(!f) return '';
-  const {m,it}=f, past=isPast(m), ex=boardFor(k).threads.filter(x=>x.kind==='information');
+// Guided explanation. Each prompt says what to answer. Required fields are marked, and the official link must be https.
+const EX_FIELDS=[
+  ['who','Who is affected','Name the groups or places most affected, such as renters on one block or drivers on one street.',true],
+  ['acc','Who is accountable','Name who decides and who carries it out. Check the official item first.',false],
+  ['change','What will change','Describe what would be built, funded, or changed, in plain words.',true],
+  ['where','Where you will see it','Name the streets, parks, or services where people will notice.',false],
+  ['when','When you will see it','Give the timeline from the official item, or say it is not known yet.',false],
+  ['goal','Why: the stated goal','What problem does the item say it solves? Keep to the official wording.',false],
+  ['how','How to take part','Where to speak, send a written comment, or check the record.',false],
+  ['source','Official link','Link to the agenda item or staff report this relies on. Must start with https://',true]
+];
+const EX_LABEL=Object.fromEntries(EX_FIELDS.map(([f,l])=>[f,l]));
+const exKey=(k,f)=>'ex:'+k+':'+f;
+
+async function postEx(k){
+  const err=document.getElementById('newerr');
+  const get=f=>(state.drafts[exKey(k,f)]||'').trim();
+  const missing=EX_FIELDS.filter(([f,,,req])=>req&&!get(f)).map(([f])=>EX_LABEL[f]);
+  if(missing.length){ if(err) err.textContent='Fill in: '+missing.join('; ')+'.'; return; }
+  if(!/^https:\/\/\S+$/.test(get('source'))){ if(err) err.textContent='The official link must start with https://'; return; }
+  const f=findItem(splitKey(k)[1]); if(!f) return;
+  const body=EX_FIELDS.filter(([fl])=>get(fl)).map(([fl])=>EX_LABEL[fl]+': '+get(fl)).join('\n\n');
+  // Keep whatever the person had typed in the comment form, and put it back after posting.
+  const saved={t:state.drafts['newtitle:'+k],b:state.drafts['newbody:'+k],kd:state.drafts['newkind:'+k]};
+  state.drafts['newtitle:'+k]='Explanation: '+f.it.title;
+  state.drafts['newbody:'+k]=body;
+  state.drafts['newkind:'+k]='information';
+  await postNewThread(k);
+  const posted=state.drafts['newbody:'+k]===undefined;
+  for(const [key,val] of [['newtitle:'+k,saved.t],['newbody:'+k,saved.b],['newkind:'+k,saved.kd]]){ if(val===undefined) delete state.drafts[key]; else state.drafts[key]=val; }
+  if(posted) EX_FIELDS.forEach(([fl])=>delete state.drafts[exKey(k,fl)]);
+  if(!posted) render();
+}
+
+function viewItem(){
+  const f=findItem(state.itemId);
+  if(!f) return `<section class="card"><p class="muted">That agenda item could not be found.</p></section>`;
+  const {m,it}=f, k='item:'+it.id, past=isPast(m), final=it.action==='Final decision';
+  const threads=boardFor(k).threads;
+  const ex=threads.filter(x=>x.kind==='information'), com=threads.filter(x=>x.kind!=='information');
   const canWrite=canPost(k);
-  return `<section class="card"><h2>What this item means</h2>
-    <p class="tags"><span class="tag ${it.action==='Final decision'?'final':''}">${it.action==='Final decision'?'Final vote by this body':'Advisory'}</span>${past?(it.result?`<span class="tag ok">Passed or result: ${esc(it.result)}</span>`:''):'<span class="tag">Upcoming</span>'}</p>
-    <p><b>${past?'What it did':'What it could do'}:</b> ${esc(it.stakes)}</p>
-    <p class="muted small">This plain summary was written for the prototype. It is not an official source. Check the agenda item before relying on it.</p>
-    <h3 style="margin-top:18px">Plain explanations from residents</h3>
-    <p class="muted small">Written by residents, not by the city. Each explanation should link to the official record.</p>
-    ${ex.length?ex.map(x=>`<div class="thread"><span class="tag">Community explanation</span><br><button class="linkish" data-act="thread" data-key="${esc(k)}" data-id="${x.id}">${esc(x.title)}</button> <span class="muted small">${x.posts.length} post${x.posts.length===1?'':'s'}</span></div>`).join(''):'<p class="muted">No plain explanations yet.</p>'}
-    <div class="bar">${canWrite?`<button class="ghost" data-act="explain" data-key="${esc(k)}">Write a plain explanation</button>`:'<span class="muted small">Only people whose districts cover this item can write an explanation. You can still read them.</span>'}</div>
-  </section>`;
+  const exList=ex.length?ex.map(x=>`<details class="ex">
+      <summary><span class="tag">Explanation</span> ${esc(x.title)} <span class="muted small">· ${esc(x.posts[0]?.who||'')}, ${esc(fmtShort(x.posts[0]?.t||''))}</span></summary>
+      <div class="ex-body">${x.posts.map(p=>`<div class="pre">${esc(p.text)}</div>`).join('')}
+        <p class="muted small">Replies to an explanation stay in its thread.</p>
+        <button class="ghost" data-act="thread" data-key="${esc(k)}" data-id="${x.id}">Open thread and reply</button></div></details>`).join('')
+    :'<p class="muted">No explanations yet. Write the first one below.</p>';
+  const comList=com.length?com.map(x=>`<div class="brow"><div class="brow-main"><button class="linkish" data-act="thread" data-key="${esc(k)}" data-id="${x.id}">${esc(x.title)}</button>
+      <div class="muted small">${esc(KIND_LABEL[x.kind])} · ${x.posts.length} post${x.posts.length===1?'':'s'} · last post ${esc(fmtShort(threadLast(x)))}</div></div></div>`).join('')
+    :'<p class="muted">No comments yet.</p>';
+  const fields=EX_FIELDS.map(([fl,label,help,req])=>`<div class="exf">
+      <label for="ex-${fl}">${esc(label)}${req?' <span class="req">(required)</span>':''}</label>
+      <p class="muted small">${esc(help)}</p>
+      <textarea id="ex-${fl}" rows="${fl==='source'?1:2}" data-draft="${esc(exKey(k,fl))}">${esc(state.drafts[exKey(k,fl)]||'')}</textarea></div>`).join('');
+  const writeBlock=canWrite
+    ? `${fields}<div class="bar"><button data-act="postex" data-key="${esc(k)}">Post explanation</button></div>`
+    : '<p class="muted small">Only people whose districts cover this item can post. You can read explanations and follow the item.</p>';
+  const kindNow=state.drafts['newkind:'+k]||'question';
+  const commentBlock=canWrite
+    ? `<div class="exf"><label for="nt">Title</label><input id="nt" data-draft="newtitle:${esc(k)}" value="${esc(state.drafts['newtitle:'+k]||'')}" placeholder="Your question or comment" autocomplete="off"></div>
+       <div class="exf"><label for="nk">Type</label><select id="nk" data-draft="newkind:${esc(k)}">${[['question','Question'],['opinion','Opinion']].map(([v,l])=>`<option value="${v}" ${kindNow===v?'selected':''}>${l}</option>`).join('')}</select></div>
+       <div class="exf"><label for="nb">Comment</label><textarea id="nb" rows="3" data-draft="newbody:${esc(k)}">${esc(state.drafts['newbody:'+k]||'')}</textarea></div>
+       <div class="bar"><button class="ghost" data-act="newthread" data-key="${esc(k)}">Post comment</button></div>`
+    : '';
+  return `<div id="newerr" class="err" role="alert"></div>
+    <section class="card">
+      <button class="ghost" data-act="meeting" data-id="${m.id}" style="margin-bottom:14px">← Back to the ${esc(fmtDate(m.date))} meeting</button>
+      <p class="eyebrow">${esc(BODIES[m.body].name)} · ${esc(m.title)} · ${fmtDate(m.date)}</p>
+      <h1>${esc(it.title)}</h1>
+      <p class="tags"><span class="tag ${final?'final':''}">${final?'Final vote by this body':'Advisory'}</span>${past?(it.result?`<span class="tag ok">Passed or result: ${esc(it.result)}</span>`:''):'<span class="tag">Upcoming</span>'}</p>
+    </section>
+    <section class="card"><h2>What this item does</h2>
+      <p>${esc(it.summary)}</p>
+      <p><b>${past?'What it did':'What it could do'}:</b> ${esc(it.stakes)}</p>
+      <p class="muted small">The plain summary was written for this prototype. Check the official agenda item before relying on it.</p></section>
+    <section class="card"><h2>Who is accountable</h2><p>${esc(it.accountable||'Not yet recorded for this item.')}</p></section>
+    <section class="card"><h2>Explanations from residents</h2>
+      <p class="muted small">An explanation is a guided response. It answers the questions below and links to the official record. Residents write explanations. The city does not.</p>
+      ${exList}
+      <h3 style="margin-top:22px">Write an explanation</h3>
+      ${writeBlock}</section>
+    <section class="card"><h2>Comments and questions</h2>
+      <p class="muted small">Comments are open conversation for questions and opinions. An explanation sets out what the item does. Replies go in the thread.</p>
+      ${comList}
+      <h3 style="margin-top:22px">Start a comment</h3>
+      ${commentBlock}</section>`;
 }
 
 const KINDS=[['question','Question'],['information','Information, with a source'],['opinion','Opinion']];
@@ -387,7 +481,7 @@ function viewBoard(){
       <div class="err" id="newerr"></div>
       <div style="margin-top:6px"><button data-act="newthread" data-key="${esc(f)}">Post thread</button></div></div>`
     : `<div class="card"><h2>Follow only</h2><p class="muted">You can read and follow this board. Posting is limited to people whose districts cover it.</p></div>`;
-  return `${itemPanel(f)}<div class="card">${backLink(f)}
+  return `<div class="card">${backLink(f)}
       <span class="tag">${esc(info.scope)}</span> ${joinTag(f)}
       <h1 style="margin-top:6px">${esc(info.title)}</h1><p>${esc(info.sub)}</p>
       <div class="bar"><span class="muted small">${st.count} thread${st.count===1?'':'s'}</span>
@@ -409,8 +503,8 @@ function viewThread(){
     : `<div class="card"><h2>Follow only</h2><p class="muted">Replies are limited to people whose districts cover this board.</p></div>`;
   return `<div class="card"><button class="ghost" data-act="board" data-key="${esc(state.boardKey)}" style="margin-bottom:10px">← ${esc(info.title)}</button>
       <span class="tag">${esc(KIND_LABEL[t.kind])}</span>
-      <h1 style="margin-top:6px">${esc(t.title)}</h1></div>
-    <div class="card"><h2>Posts</h2>${t.posts.map(p=>`<div class="post"><b>${esc(p.who)}</b> <span class="muted small">${esc(fmtShort(p.t))}</span><div>${esc(p.text)}</div></div>`).join('')}</div>
+      <h1 style="margin-top:6px">${esc(t.title)}</h1><div class="bar"><button class="${state.followed['thread:'+t.id]?'':'ghost'}" data-act="follow" data-key="${esc('thread:'+t.id)}" aria-pressed="${!!state.followed['thread:'+t.id]}">${state.followed['thread:'+t.id]?'Following this thread':'Follow this thread'}</button></div></div>
+    <div class="card"><h2>Posts</h2>${t.posts.map(p=>`<div class="post"><b>${esc(p.who)}</b> <span class="muted small">${esc(fmtShort(p.t))}</span><div class="pre">${esc(p.text)}</div></div>`).join('')}</div>
     ${reply}`;
 }
 
@@ -429,7 +523,7 @@ function sidebarBody(){
 }
 
 function viewApp(){
-  const pages={feed:viewFeed,find:viewFind,bodies:viewBodies,body:viewBody,meetings:viewMeetings,calendar:viewCalendar,meeting:viewMeeting,boards:viewBoards,allboards:viewAllBoards,board:viewBoard,thread:viewThread};
+  const pages={feed:viewFeed,find:viewFind,bodies:viewBodies,body:viewBody,meetings:viewMeetings,calendar:viewCalendar,meeting:viewMeeting,boards:viewBoards,allboards:viewAllBoards,board:viewBoard,thread:viewThread,item:viewItem};
   const sub=state.page==='board'||state.page==='thread'?(boardInfo(state.boardKey).title):'';
   return `<div class="shell ${state.navOpen?'':'closed'}">
     <aside class="side" aria-label="Main navigation">${sidebarBody()}</aside>
@@ -513,6 +607,7 @@ async function boot(){
     }
     await reloadBoards();
   }catch(e){ state.error='Could not connect to the database. '+e.message; }
+  try{state.seen=localStorage.getItem('civic.seen')||state.seen;}catch(e){}
   state.navOpen=window.matchMedia('(min-width:761px)').matches;
   state.ready=true;
   render();
@@ -532,10 +627,12 @@ document.addEventListener('click',e=>{
   if(act==='tocal'){const i=state.calendar.indexOf(id);if(i>=0)state.calendar.splice(i,1);else state.calendar.push(id);state.menuFor=id;persist();return render();}
   if(act==='followmeet'){const k='meet:'+id;state.followed[k]=!state.followed[k];state.menuFor=id;persist();return render();}
   if(act==='body') return go('body',{bodyId:id});
-  if(act==='board') return go('board',{boardKey:key,threadId:null});
+  if(act==='item') return go('item',{itemId:id,threadId:null});
+  if(act==='postex') return postEx(key);
+  if(act==='markread'){state.seen=TODAY;try{localStorage.setItem('civic.seen',TODAY);}catch(e){}return render();}
+  if(act==='board'){ if(key&&key.startsWith('item:')) return go('item',{itemId:key.slice(5),threadId:null}); return go('board',{boardKey:key,threadId:null}); }
   if(act==='thread') return go('thread',{boardKey:key,threadId:id});
   if(act==='follow'){state.followed[key]=!state.followed[key];persist();return render();}
-  if(act==='explain'){state.drafts['newkind:'+key]='information';if(!state.drafts['newtitle:'+key])state.drafts['newtitle:'+key]='Plain explanation';render();const nt=document.getElementById('nt');if(nt) nt.focus();return;}
   if(act==='newthread') return postNewThread(key);
   if(act==='reply') return postReply(key,id);
 });
