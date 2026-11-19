@@ -1,9 +1,9 @@
-const TITLES={feed:'Feed',find:'Find my districts',bodies:'Bodies',body:'Body',meetings:'Meetings',calendar:'My calendar',meeting:'Meeting',boards:'Your discussion boards',allboards:'All discussion boards',board:'Discussion board',thread:'Thread',item:'Agenda item'};
-const NAV_ON={feed:'feed',find:'find',bodies:'bodies',body:'bodies',meetings:'meetings',meeting:'meetings',calendar:'calendar',boards:'boards',allboards:'boards',board:'boards',thread:'boards',item:'meetings'};
+const TITLES={feed:'Feed',find:'Find my districts',bodies:'Bodies',body:'Body',meetings:'Meetings',calendar:'My calendar',meeting:'Meeting',boards:'Your discussion boards',allboards:'All discussion boards',board:'Discussion board',thread:'Thread',item:'Agenda item',favorites:'Favorites'};
+const NAV_ON={feed:'feed',find:'find',bodies:'bodies',body:'bodies',meetings:'meetings',meeting:'meetings',calendar:'calendar',boards:'boards',allboards:'boards',board:'boards',thread:'boards',item:'meetings',favorites:'favorites'};
 
 const state={screen:'signin',user:'',error:'',addr:null,page:'feed',navOpen:true,toggles:{fed:true,county:true,city:true,school:true,cpg:true},
   bodyId:null,meetingId:null,boardKey:null,threadId:null,query:'',boardQuery:'',drafts:{},followed:{},seq:100,
-  calendar:[],menuFor:null,itemId:null,seen:'2026-11-01',remote:{threads:[],posts:[]},me:null,ready:false,postError:''};
+  calendar:[],menuFor:null,itemId:null,customEx:{},favItems:{},favBoards:{},remote:{threads:[],posts:[]},me:null,ready:false,postError:''};
 
 /* ---------- helpers ---------- */
 const fmtDate=d=>new Date(d+'T12:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'});
@@ -76,7 +76,7 @@ const boardRow=k=>{
     <div class="brow-main"><button class="linkish" data-act="board" data-key="${esc(k)}">${esc(info.title)}</button>
       <div class="muted small">${esc(info.scope)} · ${actLine(k)}</div></div>
     <div class="brow-act">${inScope(k)?'<span class="tag">In your area</span>':''}
-      <button class="${state.followed[k]?'':'ghost'}" data-act="follow" data-key="${esc(k)}" aria-pressed="${!!state.followed[k]}">${state.followed[k]?'Following':'Follow'}</button></div>
+      <button class="${state.followed[k]?'':'ghost'}" data-act="follow" data-key="${esc(k)}" aria-pressed="${!!state.followed[k]}">${state.followed[k]?'Following':'Follow'}</button>${starBoardBtn(k)}</div>
   </div>`;
 };
 
@@ -96,6 +96,7 @@ const ICON={
   building:'<path d="M3 21h18M5 21V7l7-4 7 4v14M9 9h2M13 9h2M9 13h2M13 13h2M10 21v-4h4v4"/>',
   calendar:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
   check:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M9 16l2 2 4-4"/>',
+  star:'<path d="M12 3l2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.3 6.4 20.2l1.1-6.2L3 9.6l6.2-.9z"/>',
   chat:'<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/>',
 };
 const svgIcon=n=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[n]}</svg>`;
@@ -118,10 +119,10 @@ function addControls(m){
 }
 function meetingRow(m){
   const cal=state.calendar.includes(m.id), w=whenLabel(m.date), n=m.items.length;
-  return `<div class="mrow"><div class="mdate"><span>${esc(w.wd)}</span><b>${esc(w.day)}</b></div>
+  return `<div class="mrow ${isPast(m)?'past':''}"><div class="mdate"><span>${esc(w.wd)}</span><b>${esc(w.day)}</b></div>
     <div class="mtext"><button class="linkish" data-act="meeting" data-id="${m.id}">${esc(m.title)}</button>
       <div class="muted small">${esc(BODIES[m.body].name)} · ${esc(m.time)} · ${n} agenda item${n===1?'':'s'}</div>
-      ${cal?'<span class="tag ok">On your calendar</span>':''}</div>
+      ${cal?'<span class="tag cal">On your calendar</span>':''}</div>
     <div class="mact">${addControls(m)}</div></div>`;
 }
 function listMeetings(ms){return ms.map(meetingRow).join('');}
@@ -176,40 +177,36 @@ function feedDiscussionCard(k){
     </div></article>`;
 }
 
-// Updates for you: replies and posts on threads you follow, plus new meetings and results for bodies you follow.
-const threadBoardKey=th=>th.scope_kind==='meeting'?'meet:'+th.scope_id:th.scope_kind+':'+th.scope_id;
-const followedThread=th=>!!(state.followed[threadBoardKey(th)]||state.followed['thread:'+th.id]);
-function feedNotices(){
-  const out=[], byId=Object.fromEntries(state.remote.threads.map(th=>[th.id,th]));
-  for(const p of state.remote.posts){
-    const th=byId[p.thread_id]; if(!th) continue;
-    const bk=threadBoardKey(th); if(!followedThread(th)||!knownKey(bk)) continue;
-    const day=p.created_at.slice(0,10);
-    if(day<=state.seen||p.author_name===state.user) continue;
-    out.push({day,text:`${p.author_name} ${th.kind==='information'?'wrote an explanation':'replied'} in "${th.title}"`,where:boardInfo(bk).title,
-      act:`<button class="ghost" data-act="thread" data-key="${esc(bk)}" data-id="${esc(th.id)}">Read</button>`});
-  }
-  for(const m of feedMeetings()){
-    if(m.date>state.seen) out.push({day:m.date,text:`New meeting: ${m.title}, ${fmtDate(m.date)}`,where:BODIES[m.body].name,
-      act:`<button class="ghost" data-act="meeting" data-id="${m.id}">Open meeting</button>`});
-    if(isPast(m)&&m.date>state.seen) for(const it of m.items.filter(i=>i.result)) out.push({day:m.date,text:`Result posted: ${it.title}`,where:`${BODIES[m.body].name}, ${fmtDate(m.date)}`,
-      act:`<button class="ghost" data-act="item" data-id="${it.id}">Open item</button>`});
-  }
-  return out.sort((x,y)=>y.day.localeCompare(x.day));
-}
+const persistFavs=()=>{try{localStorage.setItem('civic.favItems',JSON.stringify(state.favItems));localStorage.setItem('civic.favBoards',JSON.stringify(state.favBoards));}catch(e){}};
+const starItemBtn=id=>{const on=!!state.favItems[id];return `<button class="${on?'':'ghost'}" data-act="staritem" data-id="${esc(id)}" aria-pressed="${on}">${on?'★ Saved item':'☆ Save item'}</button>`;};
+const starBoardBtn=k=>{if(k.startsWith('item:'))return '';const on=!!state.favBoards[k];return `<button class="${on?'':'ghost'}" data-act="starboard" data-key="${esc(k)}" aria-pressed="${on}">${on?'★ Saved board':'☆ Save board'}</button>`;};
+const legendHtml=()=>`<div class="legend" aria-label="Color key"><span class="tag up">Upcoming</span><span class="tag ok">Passed or result</span><span class="tag final">Final vote</span><span class="tag adv">Advisory</span><span class="tag exp">Explanation</span><span class="tag">Comment</span></div>`;
 
 function viewFeed(){
-  if(!state.addr) return `<section class="card"><h1>Welcome, ${esc(state.user)}</h1><p class="muted">Find your districts first. Your feed shows updates, meetings, and decisions for the bodies that represent you.</p><div class="bar"><button data-act="page" data-id="find">Find my districts</button></div></section>`;
-  const notes=feedNotices(), ms=feedMeetings();
-  const up=ms.filter(m=>!isPast(m)).sort(byAsc);
-  const decisions=ms.filter(isPast).sort(byDesc).flatMap(m=>m.items.filter(i=>i.result).map(i=>({m,i})));
-  const list=notes.slice(0,8).map(n=>`<div class="notice"><div><b>${esc(n.text)}</b><div class="muted small">${esc(n.where)} · ${esc(fmtShort(n.day))}</div></div>${n.act}</div>`).join('');
-  return `<p class="muted small feed-key">Official records come from city and county pages. Replies and explanations come from residents and are not official records.</p>
-    <section class="card"><div class="sec-head"><h2>Updates for you</h2><span class="muted small">${notes.length} since ${esc(fmtShort(state.seen))}</span></div>
-      ${notes.length?list:'<p class="muted">No new replies or updates. Follow a thread, a body, or a meeting, and its updates appear here.</p>'}
-      <div class="bar"><button class="ghost" data-act="markread">Mark all as read</button><button class="ghost" data-act="page" data-id="boards">Your boards</button></div></section>
+  if(!state.addr) return `<section class="card"><h1>Welcome, ${esc(state.user)}</h1><p class="muted">Find your districts first. Your feed shows meetings and decisions for the bodies that represent you.</p><div class="bar"><button data-act="page" data-id="find">Find my districts</button></div></section>`;
+  const ms=feedMeetings();
+  const up=ms.filter(m=>!isPast(m)).sort(byAsc).slice(0,3);
+  const decisions=ms.filter(isPast).sort(byDesc).flatMap(m=>m.items.filter(i=>i.result).map(i=>({m,i}))).slice(0,2);
+  return `${legendHtml()}
     <section class="card"><h2>Coming up</h2>${up.length?up.map(feedMeetingCard).join(''):'<p class="muted">No upcoming meetings for what you follow. <button class="linkish" data-act="page" data-id="meetings">Browse meetings</button></p>'}</section>
-    <section class="card"><h2>Recent decisions</h2>${decisions.length?decisions.slice(0,2).map(({m,i})=>feedDecisionCard(m,i)).join(''):'<p class="muted">No recent decisions for what you follow yet.</p>'}</section>`;
+    <section class="card"><h2>Recent decisions</h2>${decisions.length?decisions.map(({m,i})=>feedDecisionCard(m,i)).join(''):'<p class="muted">No recent decisions for what you follow yet.</p>'}</section>`;
+}
+
+function viewFavorites(){
+  const items=Object.keys(state.favItems).filter(id=>state.favItems[id]).map(id=>findItem(id)).filter(Boolean).sort((x,y)=>x.m.date.localeCompare(y.m.date));
+  const boards=Object.keys(state.favBoards).filter(k=>state.favBoards[k]&&knownKey(k)&&!k.startsWith('item:'));
+  const itemRows=items.map(({m,it})=>{
+    const ik='item:'+it.id, past=isPast(m), ex=explainCount(ik), cm=commentCount(ik);
+    return `<div class="fav-row"><div class="fav-main"><p class="eyebrow">${esc(BODIES[m.body].name)} · ${fmtDate(m.date)}</p>
+      <button class="linkish" data-act="item" data-id="${it.id}">${esc(it.title)}</button>
+      <p class="tags"><span class="tag ${past?'prev':'up'}">${past?'Previous':'Upcoming'}</span>${it.result?`<span class="tag ok">Result: ${esc(it.result)}</span>`:''}</p>
+      <div class="muted small">${ex} explanation${ex===1?'':'s'} · ${cm} comment${cm===1?'':'s'}</div></div>
+      <div class="fav-act"><button data-act="item" data-id="${it.id}">Open item</button><button class="ghost" data-act="staritem" data-id="${it.id}" aria-pressed="true">Remove</button></div></div>`;
+  }).join('');
+  const boardRows=boards.map(k=>{const info=boardInfo(k);return `<div class="fav-row"><div class="fav-main"><button class="linkish" data-act="board" data-key="${esc(k)}">${esc(info.title)}</button><div class="muted small">${esc(info.scope)} · ${actLine(k)}</div></div><div class="fav-act"><button data-act="board" data-key="${esc(k)}">Open board</button><button class="ghost" data-act="starboard" data-key="${esc(k)}" aria-pressed="true">Remove</button></div></div>`;}).join('');
+  return `<section class="card"><h1>Favorites</h1><p class="muted">Agenda items and discussion boards you saved for quick access. Saving is separate from following a board. Saving does not send updates.</p></section>
+    <section class="card"><h2>Saved agenda items</h2>${itemRows||'<p class="muted">No saved items yet. Open an agenda item and choose Save item.</p>'}</section>
+    <section class="card"><h2>Saved discussion boards</h2>${boardRows||'<p class="muted">No saved boards yet. Open a board and choose Save board.</p>'}</section>`;
 }
 
 function viewFind(){
@@ -319,11 +316,11 @@ function viewMeeting(){
     const ik='item:'+it.id, isFinal=it.action==='Final decision', ex=explainCount(ik), cm=commentCount(ik);
     return `<li class="agenda-item"><span class="ai-num" aria-hidden="true">${i+1}</span><div class="ai-main">
       <h3>${esc(it.title)}</h3>
-      <p class="tags"><span class="tag ${isFinal?'final':''}">${isFinal?'Final vote by this body':'Advisory'}</span>${past?(it.result?`<span class="tag ok">Passed or result: ${esc(it.result)}</span>`:''):'<span class="tag">Upcoming</span>'}</p>
+      <p class="tags"><span class="tag ${isFinal?'final':'adv'}">${isFinal?'Final vote by this body':'Advisory'}</span>${past?(it.result?`<span class="tag ok">Passed or result: ${esc(it.result)}</span>`:''):'<span class="tag up">Upcoming</span>'}</p>
       <p>${esc(it.summary)}</p>
       <p class="small"><b>${past?'What it did':'What it could do'}:</b> ${esc(it.stakes)}</p>
       <p class="small"><b>Accountable:</b> ${esc(it.accountable||'Not yet recorded.')}</p>
-      <div class="bar"><button data-act="item" data-id="${it.id}">Open item: ${ex} explanation${ex===1?'':'s'}, ${cm} comment${cm===1?'':'s'}</button></div>
+      <div class="bar">${starItemBtn(it.id)}<button data-act="item" data-id="${it.id}">Open item: ${ex} explanation${ex===1?'':'s'}, ${cm} comment${cm===1?'':'s'}</button></div>
     </div></li>`;
   }).join('');
   return `<section class="card">
@@ -331,7 +328,7 @@ function viewMeeting(){
       <p class="eyebrow">${esc(b.name)}</p>
       <h1>${esc(m.title)}</h1>
       <p class="meta">${fmtDate(m.date)} · ${esc(m.time)}${b.where?` · ${esc(b.where)}`:''}</p>
-      <p class="tags"><span class="tag ${past?'':'ok'}">${past?'Previous':'Upcoming'}</span>${cal?'<span class="tag ok">On your calendar</span>':''}</p>
+      <p class="tags"><span class="tag ${past?'prev':'up'}">${past?'Previous':'Upcoming'}</span>${cal?'<span class="tag cal">On your calendar</span>':''}</p>
       <div class="bar">${addControls(m)}</div>
     </section>
     <section class="card"><h2>Overview</h2><p>${esc(overview)}</p>
@@ -372,16 +369,16 @@ function viewAllBoards(){
     <div id="board-list">${boardsHtml()}</div>`;
 }
 
-// Guided explanation. Each prompt says what to answer. Required fields are marked, and the official link must be https.
+// Explanation prompts. Every prompt is optional except the official link. Answer what you know; skip the rest.
 const EX_FIELDS=[
-  ['who','Who is affected','Name the groups or places most affected, such as renters on one block or drivers on one street.',true],
-  ['acc','Who is accountable','Name who decides and who carries it out. Check the official item first.',false],
-  ['change','What will change','Describe what would be built, funded, or changed, in plain words.',true],
-  ['where','Where you will see it','Name the streets, parks, or services where people will notice.',false],
-  ['when','When you will see it','Give the timeline from the official item, or say it is not known yet.',false],
-  ['goal','Why: the stated goal','What problem does the item say it solves? Keep to the official wording.',false],
+  ['who','Who is affected','Groups or places most affected, such as renters on one block.',false],
+  ['acc','Who is accountable','Who decides and who carries it out. The item page lists this too.',false],
+  ['change','What will change','What would be built, funded, or changed, in plain words.',false],
+  ['where','Where you will see it','Streets, parks, or services where people will notice.',false],
+  ['when','When you will see it','The timeline from the official item, or that it is not known yet.',false],
+  ['goal','The stated goal','What problem the item says it solves.',false],
   ['how','How to take part','Where to speak, send a written comment, or check the record.',false],
-  ['source','Official link','Link to the agenda item or staff report this relies on. Must start with https://',true]
+  ['source','Official link','Link to the agenda item or staff report. Must start with https://',true]
 ];
 const EX_LABEL=Object.fromEntries(EX_FIELDS.map(([f,l])=>[f,l]));
 const exKey=(k,f)=>'ex:'+k+':'+f;
@@ -389,11 +386,12 @@ const exKey=(k,f)=>'ex:'+k+':'+f;
 async function postEx(k){
   const err=document.getElementById('newerr');
   const get=f=>(state.drafts[exKey(k,f)]||'').trim();
-  const missing=EX_FIELDS.filter(([f,,,req])=>req&&!get(f)).map(([f])=>EX_LABEL[f]);
-  if(missing.length){ if(err) err.textContent='Fill in: '+missing.join('; ')+'.'; return; }
+  if(!get('source')){ if(err) err.textContent='Add the official link. Every other question is optional.'; return; }
   if(!/^https:\/\/\S+$/.test(get('source'))){ if(err) err.textContent='The official link must start with https://'; return; }
   const f=findItem(splitKey(k)[1]); if(!f) return;
-  const body=EX_FIELDS.filter(([fl])=>get(fl)).map(([fl])=>EX_LABEL[fl]+': '+get(fl)).join('\n\n');
+  const answered=EX_FIELDS.filter(([fl])=>get(fl)).map(([fl])=>EX_LABEL[fl]+': '+get(fl));
+  const extra=(state.customEx[k]||[]).map(c=>c.q+': '+c.a);
+  const body=[...answered,...extra].join('\n\n');
   // Keep whatever the person had typed in the comment form, and put it back after posting.
   const saved={t:state.drafts['newtitle:'+k],b:state.drafts['newbody:'+k],kd:state.drafts['newkind:'+k]};
   state.drafts['newtitle:'+k]='Explanation: '+f.it.title;
@@ -402,8 +400,30 @@ async function postEx(k){
   await postNewThread(k);
   const posted=state.drafts['newbody:'+k]===undefined;
   for(const [key,val] of [['newtitle:'+k,saved.t],['newbody:'+k,saved.b],['newkind:'+k,saved.kd]]){ if(val===undefined) delete state.drafts[key]; else state.drafts[key]=val; }
-  if(posted) EX_FIELDS.forEach(([fl])=>delete state.drafts[exKey(k,fl)]);
-  if(!posted) render();
+  if(posted){ EX_FIELDS.forEach(([fl])=>delete state.drafts[exKey(k,fl)]); delete state.customEx[k]; }
+  else render();
+}
+
+// One collapsible row per prompt. Open a row to answer it. A row you leave empty is simply not answered.
+function exComposer(k){
+  const rows=EX_FIELDS.map(([f,label,help,req])=>{
+    const v=(state.drafts[exKey(k,f)]||'').trim();
+    const status=v?'<span class="tag ok">Answered</span>':(req?'<span class="tag no">Required</span>':'<span class="tag">Optional</span>');
+    return `<details class="prompt" ${v?'open':''}>
+      <summary><span>${esc(label)}</span>${status}</summary>
+      <div class="prompt-body"><p class="muted small">${esc(help)}</p>
+        <textarea rows="2" aria-label="${esc(label)}" data-draft="${esc(exKey(k,f))}">${esc(state.drafts[exKey(k,f)]||'')}</textarea>
+        <div class="bar"><button class="ghost" data-act="exskip" data-key="${esc(k)}" data-id="${f}">Skip this question</button></div></div></details>`;
+  }).join('');
+  const mine=(state.customEx[k]||[]).map((c,i)=>`<div class="exq"><b>${esc(c.q)}</b><p class="small">${esc(c.a)}</p><button class="ghost" data-act="exdel" data-key="${esc(k)}" data-id="${i}">Remove</button></div>`).join('');
+  const add=`<details class="prompt"><summary><span>Add your own question and answer</span><span class="tag">Optional</span></summary>
+      <div class="prompt-body">
+        <label for="cq-${esc(k)}">Question</label>
+        <input id="cq-${esc(k)}" data-draft="excq:${esc(k)}" value="${esc(state.drafts['excq:'+k]||'')}" autocomplete="off">
+        <label for="ca-${esc(k)}" style="display:block;margin-top:8px">Answer</label>
+        <textarea id="ca-${esc(k)}" rows="2" data-draft="exca:${esc(k)}">${esc(state.drafts['exca:'+k]||'')}</textarea>
+        <div class="bar"><button class="ghost" data-act="excadd" data-key="${esc(k)}">Add to explanation</button></div></div></details>`;
+  return rows+mine+add;
 }
 
 function viewItem(){
@@ -414,7 +434,7 @@ function viewItem(){
   const ex=threads.filter(x=>x.kind==='information'), com=threads.filter(x=>x.kind!=='information');
   const canWrite=canPost(k);
   const exList=ex.length?ex.map(x=>`<details class="ex">
-      <summary><span class="tag">Explanation</span> ${esc(x.title)} <span class="muted small">· ${esc(x.posts[0]?.who||'')}, ${esc(fmtShort(x.posts[0]?.t||''))}</span></summary>
+      <summary><span class="tag exp">Explanation</span> ${esc(x.title)} <span class="muted small">· ${esc(x.posts[0]?.who||'')}, ${esc(fmtShort(x.posts[0]?.t||''))}</span></summary>
       <div class="ex-body">${x.posts.map(p=>`<div class="pre">${esc(p.text)}</div>`).join('')}
         <p class="muted small">Replies to an explanation stay in its thread.</p>
         <button class="ghost" data-act="thread" data-key="${esc(k)}" data-id="${x.id}">Open thread and reply</button></div></details>`).join('')
@@ -422,12 +442,9 @@ function viewItem(){
   const comList=com.length?com.map(x=>`<div class="brow"><div class="brow-main"><button class="linkish" data-act="thread" data-key="${esc(k)}" data-id="${x.id}">${esc(x.title)}</button>
       <div class="muted small">${esc(KIND_LABEL[x.kind])} · ${x.posts.length} post${x.posts.length===1?'':'s'} · last post ${esc(fmtShort(threadLast(x)))}</div></div></div>`).join('')
     :'<p class="muted">No comments yet.</p>';
-  const fields=EX_FIELDS.map(([fl,label,help,req])=>`<div class="exf">
-      <label for="ex-${fl}">${esc(label)}${req?' <span class="req">(required)</span>':''}</label>
-      <p class="muted small">${esc(help)}</p>
-      <textarea id="ex-${fl}" rows="${fl==='source'?1:2}" data-draft="${esc(exKey(k,fl))}">${esc(state.drafts[exKey(k,fl)]||'')}</textarea></div>`).join('');
-  const writeBlock=canWrite
-    ? `${fields}<div class="bar"><button data-act="postex" data-key="${esc(k)}">Post explanation</button></div>`
+  const canWriteEx=canWrite;
+  const writeBlock=canWriteEx
+    ? `${exComposer(k)}<div class="bar"><button data-act="postex" data-key="${esc(k)}">Post explanation</button></div>`
     : '<p class="muted small">Only people whose districts cover this item can post. You can read explanations and follow the item.</p>';
   const kindNow=state.drafts['newkind:'+k]||'question';
   const commentBlock=canWrite
@@ -440,20 +457,20 @@ function viewItem(){
     <section class="card">
       <button class="ghost" data-act="meeting" data-id="${m.id}" style="margin-bottom:14px">← Back to the ${esc(fmtDate(m.date))} meeting</button>
       <p class="eyebrow">${esc(BODIES[m.body].name)} · ${esc(m.title)} · ${fmtDate(m.date)}</p>
-      <h1>${esc(it.title)}</h1>
-      <p class="tags"><span class="tag ${final?'final':''}">${final?'Final vote by this body':'Advisory'}</span>${past?(it.result?`<span class="tag ok">Passed or result: ${esc(it.result)}</span>`:''):'<span class="tag">Upcoming</span>'}</p>
+      <h1>${esc(it.title)}</h1><div class="bar">${starItemBtn(it.id)}</div>
+      <p class="tags"><span class="tag ${final?'final':'adv'}">${final?'Final vote by this body':'Advisory'}</span>${past?(it.result?`<span class="tag ok">Passed or result: ${esc(it.result)}</span>`:''):'<span class="tag up">Upcoming</span>'}</p>
     </section>
-    <section class="card"><h2>What this item does</h2>
+    <section class="card zone-official"><h2>What this item does</h2>
       <p>${esc(it.summary)}</p>
       <p><b>${past?'What it did':'What it could do'}:</b> ${esc(it.stakes)}</p>
       <p class="muted small">The plain summary was written for this prototype. Check the official agenda item before relying on it.</p></section>
     <section class="card"><h2>Who is accountable</h2><p>${esc(it.accountable||'Not yet recorded for this item.')}</p></section>
-    <section class="card"><h2>Explanations from residents</h2>
-      <p class="muted small">An explanation is a guided response. It answers the questions below and links to the official record. Residents write explanations. The city does not.</p>
+    <section class="card zone-community"><h2>Explanations from residents</h2>
+      <p class="muted small">Answer the questions you can. Only the official link is required. Residents write explanations, not the city.</p>
       ${exList}
       <h3 style="margin-top:22px">Write an explanation</h3>
       ${writeBlock}</section>
-    <section class="card"><h2>Comments and questions</h2>
+    <section class="card zone-community"><h2>Comments and questions</h2>
       <p class="muted small">Comments are open conversation for questions and opinions. An explanation sets out what the item does. Replies go in the thread.</p>
       ${comList}
       <h3 style="margin-top:22px">Start a comment</h3>
@@ -485,7 +502,7 @@ function viewBoard(){
       <span class="tag">${esc(info.scope)}</span> ${joinTag(f)}
       <h1 style="margin-top:6px">${esc(info.title)}</h1><p>${esc(info.sub)}</p>
       <div class="bar"><span class="muted small">${st.count} thread${st.count===1?'':'s'}</span>
-        <button class="${state.followed[f]?'':'ghost'}" data-act="follow" data-key="${esc(f)}" aria-pressed="${!!state.followed[f]}">${state.followed[f]?'Following':'Follow this board'}</button></div></div>
+        <button class="${state.followed[f]?'':'ghost'}" data-act="follow" data-key="${esc(f)}" aria-pressed="${!!state.followed[f]}">${state.followed[f]?'Following':'Follow this board'}</button>${starBoardBtn(f)}</div></div>
     ${form}
     <div class="card"><h2>Threads</h2>${list}</div>`;
 }
@@ -511,7 +528,7 @@ function viewThread(){
 /* ---------- shell ---------- */
 function sidebarBody(){
   const item=(id,label,icon)=>`<button class="navbtn ${NAV_ON[state.page]===id?'on':''}" data-act="page" data-id="${id}" ${NAV_ON[state.page]===id?'aria-current="page"':''}>${svgIcon(icon)}<span>${label}</span></button>`;
-  const nav=`<div class="navgroup"><div class="navhead">Home</div>${item('feed','Feed','feed')}</div>
+  const nav=`<div class="navgroup"><div class="navhead">Home</div>${item('feed','Feed','feed')}${item('favorites','Favorites','star')}</div>
     <div class="navgroup"><div class="navhead">Your districts</div>${item('find','Find my districts','pin')}</div>
     <div class="navgroup"><div class="navhead">Government</div>${item('bodies','Bodies','building')}${item('meetings','Meetings','calendar')}${item('calendar','My calendar','check')}</div>
     <div class="navgroup"><div class="navhead">Talk</div>${item('boards','Discussion boards','chat')}</div>`;
@@ -523,7 +540,7 @@ function sidebarBody(){
 }
 
 function viewApp(){
-  const pages={feed:viewFeed,find:viewFind,bodies:viewBodies,body:viewBody,meetings:viewMeetings,calendar:viewCalendar,meeting:viewMeeting,boards:viewBoards,allboards:viewAllBoards,board:viewBoard,thread:viewThread,item:viewItem};
+  const pages={feed:viewFeed,find:viewFind,bodies:viewBodies,body:viewBody,meetings:viewMeetings,calendar:viewCalendar,meeting:viewMeeting,boards:viewBoards,allboards:viewAllBoards,board:viewBoard,thread:viewThread,item:viewItem,favorites:viewFavorites};
   const sub=state.page==='board'||state.page==='thread'?(boardInfo(state.boardKey).title):'';
   return `<div class="shell ${state.navOpen?'':'closed'}">
     <aside class="side" aria-label="Main navigation">${sidebarBody()}</aside>
@@ -607,7 +624,7 @@ async function boot(){
     }
     await reloadBoards();
   }catch(e){ state.error='Could not connect to the database. '+e.message; }
-  try{state.seen=localStorage.getItem('civic.seen')||state.seen;}catch(e){}
+  try{state.favItems=JSON.parse(localStorage.getItem('civic.favItems')||'{}');state.favBoards=JSON.parse(localStorage.getItem('civic.favBoards')||'{}');}catch(e){}
   state.navOpen=window.matchMedia('(min-width:761px)').matches;
   state.ready=true;
   render();
@@ -629,7 +646,13 @@ document.addEventListener('click',e=>{
   if(act==='body') return go('body',{bodyId:id});
   if(act==='item') return go('item',{itemId:id,threadId:null});
   if(act==='postex') return postEx(key);
-  if(act==='markread'){state.seen=TODAY;try{localStorage.setItem('civic.seen',TODAY);}catch(e){}return render();}
+  if(act==='staritem'){if(state.favItems[id]) delete state.favItems[id]; else state.favItems[id]=true; persistFavs(); return render();}
+  if(act==='starboard'){if(state.favBoards[key]) delete state.favBoards[key]; else state.favBoards[key]=true; persistFavs(); return render();}
+  if(act==='exskip'){state.drafts[exKey(key,id)]='';return render();}
+  if(act==='excadd'){const q=(state.drafts['excq:'+key]||'').trim(),a=(state.drafts['exca:'+key]||'').trim();
+    if(!q||!a){const e=document.getElementById('newerr');if(e) e.textContent='Add both a question and an answer.';return;}
+    (state.customEx[key]=state.customEx[key]||[]).push({q,a});delete state.drafts['excq:'+key];delete state.drafts['exca:'+key];return render();}
+  if(act==='exdel'){(state.customEx[key]||[]).splice(Number(id),1);return render();}
   if(act==='board'){ if(key&&key.startsWith('item:')) return go('item',{itemId:key.slice(5),threadId:null}); return go('board',{boardKey:key,threadId:null}); }
   if(act==='thread') return go('thread',{boardKey:key,threadId:id});
   if(act==='follow'){state.followed[key]=!state.followed[key];persist();return render();}
