@@ -26,6 +26,8 @@ body{margin:0;font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-seri
 .navbtn.on{background:var(--navy-2);color:#fff;font-weight:700;border-left-color:var(--red)}
 .navbtn svg{flex:none;width:18px;height:18px}
 .side :focus-visible{outline-color:#fff}
+.drawer-close{display:none}
+.scrim{display:none}
 .sidebox{margin-top:22px;border-top:1px solid rgba(255,255,255,.16);padding:14px 10px 0}
 .sidebox h2{color:var(--navy-mute)}
 .tg{display:flex;gap:10px;align-items:flex-start;padding:6px 0;font-size:14px;cursor:pointer;color:var(--navy-ink)}
@@ -178,6 +180,8 @@ button.star.on{background:var(--navy);color:#fff;border-color:var(--navy)}
   .addr{display:none}
   .side{position:fixed;top:0;left:0;bottom:0;height:100vh;width:260px;z-index:5;box-shadow:0 0 24px rgba(0,0,0,.28)}
   .shell.closed .side{display:none}
+  .drawer-close{display:inline-flex;margin:0 10px 14px;color:#fff;background:transparent;border-color:#b8c4dd}
+  .scrim{display:block;position:fixed;inset:0;z-index:4;background:rgba(15,23,42,.45)}
   header{padding:10px 16px}
   .wrap{padding:20px 16px 40px}
   h1{font-size:24px}

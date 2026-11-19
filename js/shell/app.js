@@ -541,7 +541,7 @@ function sidebarBody(){
     ? `<div class="sidebox"><h2>Your districts</h2>${WORKING.map(l=>`<label class="tg"><input type="checkbox" data-act="toggle" data-id="${l}" ${state.toggles[l]?'checked':''}><span><b>${esc(LEVEL_LABEL[l])}</b><br><span class="muted small">${esc(DIST[state.addr.d[l]].label)}</span></span></label>`).join('')}
         <p class="muted small">Show meetings and boards for each area. State and U.S. House info pages are not working yet.</p></div>`
     : `<div class="sidebox"><p class="muted small">No address set. Use Find my districts.</p></div>`;
-  return `<div class="brand">Civic Lens</div>${nav}${districts}`;
+  return `<div class="brand">Civic Lens</div><button class="ghost drawer-close" data-act="nav">Close menu</button>${nav}${districts}`;
 }
 
 function viewApp(){
@@ -549,6 +549,7 @@ function viewApp(){
   const sub=state.page==='board'||state.page==='thread'?(boardInfo(state.boardKey).title):'';
   return `<div class="shell ${state.navOpen?'':'closed'}">
     <aside class="side" aria-label="Main navigation">${sidebarBody()}</aside>
+    ${state.navOpen?'<div class="scrim" data-act="nav"></div>':''}
     <div class="main">
       <header><button class="ghost" data-act="nav" aria-expanded="${state.navOpen}" aria-label="Show or hide menu">☰</button><b>${esc(TITLES[state.page])}</b><span class="spacer"></span>
         <span class="muted small">${esc(state.user)}${state.addr?'<span class="addr"> · '+esc(state.addr.full)+'</span>':''}</span>
@@ -633,7 +634,7 @@ async function boot(){
   state.navOpen=window.matchMedia('(min-width:761px)').matches;
   state.ready=true;
   render();
-}function go(page,extra={}){Object.assign(state,{page},extra);render();}
+}function go(page,extra={}){Object.assign(state,{page},extra);if(window.matchMedia('(max-width:760px)').matches) state.navOpen=false;render();}
 
 /* ---------- events ---------- */
 document.addEventListener('click',e=>{
@@ -675,5 +676,6 @@ document.addEventListener('change',e=>{
 });
 document.addEventListener('keydown',e=>{
   if(e.key==='Enter'&&e.target.id==='username') signin();
+  if(e.key==='Escape'&&state.navOpen){state.navOpen=false;render();}
 });
 boot();
