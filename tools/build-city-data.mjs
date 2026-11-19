@@ -21,7 +21,7 @@ for (const [id, b] of Object.entries(s.bodies)) {
 const DIST = Object.fromEntries(Object.entries(s.districts).map(([id, d]) =>
   [id, { ...d, body: d.body && KEEP.has(d.body) ? d.body : null }]));
 const MEETINGS = s.meetings.filter(m => KEEP.has(m.body)).map(m => ({
-  ...m, items: [], source: s.meeting_source, checked: s.checked,
+  ...m, items: m.items ?? [], source: m.source ?? s.meeting_source, checked: m.checked ?? s.checked,
 }));
 
 writeFileSync('js/shell/city-data.js', [
@@ -51,6 +51,7 @@ const placeKind = id =>
   : id.startsWith('bos-') ? 'county'
   : id.startsWith('sdcc-') ? 'council_district'
   : id.startsWith('sdusd-') ? 'school_district'
+  : id.startsWith('cpg-') ? 'neighborhood'
   : id.startsWith('grp-') ? 'neighborhood' : null;
 const toTime = t => {
   const m = /(\d{1,2}):(\d{2})\s*([ap])/i.exec(t);
@@ -90,7 +91,7 @@ for (const key of pairs) {
   const [body, place] = key.split('|');
   out.push(`insert into body_places (body_id, place_id) values (${q(body)}, ${q(place)}) on conflict do nothing;`);
 }
-out.push('', '-- Meetings (agenda items are not in the data set yet)');
+out.push('', '-- Meetings (agenda items are loaded by the app from city-data.js)');
 for (const m of MEETINGS) {
   out.push(`insert into meetings (id, body_id, starts_at, title) values (${q(m.id)}, ${q(m.body)}, ${q(m.date + 'T' + toTime(m.time) + '-08:00')}, ${q(m.title)}) on conflict (id) do nothing;`);
 }

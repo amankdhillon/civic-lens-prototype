@@ -1,7 +1,7 @@
 const TITLES={feed:'Feed',find:'Find my districts',bodies:'Bodies',body:'Body',meetings:'Meetings',calendar:'My calendar',meeting:'Meeting',boards:'Your discussion boards',allboards:'All discussion boards',board:'Discussion board',thread:'Thread'};
 const NAV_ON={feed:'feed',find:'find',bodies:'bodies',body:'bodies',meetings:'meetings',meeting:'meetings',calendar:'calendar',boards:'boards',allboards:'boards',board:'boards',thread:'boards'};
 
-const state={screen:'signin',user:'',error:'',addr:null,page:'feed',navOpen:true,toggles:{county:true,city:true,school:true,local:true},
+const state={screen:'signin',user:'',error:'',addr:null,page:'feed',navOpen:true,toggles:{fed:true,county:true,city:true,school:true,cpg:true},
   bodyId:null,meetingId:null,boardKey:null,threadId:null,query:'',boardQuery:'',drafts:{},followed:{},seq:100,
   calendar:[],menuFor:null,remote:{threads:[],posts:[]},me:null,ready:false,postError:''};
 
@@ -84,7 +84,7 @@ function viewSignin(){
 }
 
 const knownKey=k=>{const [t,id]=splitKey(k);if(t==='topic')return TOPICS.some(x=>x.id===id);if(t==='body')return !!BODIES[id];if(t==='place')return !!DIST[id];if(t==='meet')return !!findMeeting(id);return false;};
-const kindLabel=b=>b.kind==='committee'?'Subcommittee':b.kind==='board'?'Board or commission':'Governing body';
+const kindLabel=b=>b.label||(b.kind==='committee'?'Subcommittee':b.kind==='board'?'Board or commission':'Governing body');
 const ICON={
   feed:'<path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',
   pin:'<path d="M12 22s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="10" r="2.5"/>',
@@ -177,16 +177,25 @@ function viewBodies(){
   }).join('');
 }
 
+// Join vs follow. Follow: anyone can follow any board. Join: your address puts you in the district, so you can post there.
+const canPost=k=>{
+  if(!state.addr) return false;
+  const [t,id]=splitKey(k);
+  if(t==='topic') return true;
+  if(t==='place') return mine(id);
+  const body=t==='body'?id:bodyOfKey(k);
+  return !!body && Object.values(state.addr.d).some(p=>DIST[p].body===body);
+};
+const joinTag=k=>canPost(k)?'<span class="tag ok">Joined: you can post</span>':'<span class="tag">Follow only</span>';
 function districtSection(p){
-  const d=DIST[p], yours=mine(p), key='place:'+p;
-  const actions=yours
-    ? `<p class="small">Your district. You can post here.</p>
-       <div class="bar"><button data-act="board" data-key="${esc(key)}">Open district discussion</button>
-       <button class="ghost" data-act="follow" data-key="${esc(key)}" aria-pressed="${!!state.followed[key]}">${state.followed[key]?'Following':'Follow'}</button></div>`
-    : '<p class="muted small">View only. You can post only in your own districts.</p>';
+  const d=DIST[p], yours=mine(p), key='place:'+p, fol=!!state.followed[key];
   return `<details class="dist" ${yours?'open':''}>
-    <summary><b>${esc(d.label)}</b><span class="muted"> · ${esc(d.rep)}</span>${yours?' <span class="tag ok">Your district</span>':''}</summary>
-    <div class="dist-body">${d.note?`<p class="small">${esc(d.note)}</p>`:''}${actions}</div></details>`;
+    <summary><b>${esc(d.label)}</b><span class="muted"> · ${esc(d.rep)}</span> ${yours?'<span class="tag ok">Joined: your district</span>':'<span class="tag">Follow only</span>'}</summary>
+    <div class="dist-body">${d.note?`<p class="small">${esc(d.note)}</p>`:''}
+      <div class="bar"><button data-act="board" data-key="${esc(key)}">Open district board</button>
+      <button class="${fol?'':'ghost'}" data-act="follow" data-key="${esc(key)}" aria-pressed="${fol}">${fol?'Following':'Follow'}</button></div>
+      ${yours?'':'<p class="muted small">You can read and follow this board. Only people in this district can post.</p>'}
+    </div></details>`;
 }
 function viewBody(){
   const b=BODIES[state.bodyId];
@@ -203,7 +212,7 @@ function viewBody(){
     ? `<p class="muted small">Source: <a href="${esc(b.source)}" target="_blank" rel="noopener">official page</a>, checked ${esc(b.checked||'')}. Verify before relying on it.</p>`
     : '<p class="muted small">Sample or not yet checked. Verify before relying on it.</p>';
   const seats=districts.length
-    ? `<h2 style="margin-top:14px">Districts</h2><p class="muted small">Open each district to see its member. You can post only in your own district; the others are view only.</p>${districts.map(districtSection).join('')}`
+    ? `<h2 style="margin-top:14px">Districts</h2><p class="muted small">Every district board can be read and followed. You are joined to your own district by your address, so only those boards accept your posts.</p>${districts.map(districtSection).join('')}`
     : '';
   return `<div class="card"><button class="ghost" data-act="page" data-id="bodies" style="margin-bottom:10px">← Back to bodies</button>
     <h1>${esc(b.name)}</h1><p>${esc(b.about)}</p>
@@ -248,7 +257,7 @@ function viewMeeting(){
       <h1>${esc(BODIES[m.body].name)}</h1><div class="muted">${fmtDate(m.date)} · ${esc(m.time)} · ${esc(m.title)}</div>
       <div class="bar" style="margin:8px 0"><span class="tag ${past?'':'ok'}">${past?'Previous':'Upcoming'}</span>${state.calendar.includes(m.id)?'<span class="tag ok">On your calendar</span>':''}</div>
       <p>${esc(meetingSummary(m))}</p>
-      <p class="muted small">Source: <a href="${esc(m.source||'')}" target="_blank" rel="noopener">City Clerk meetings calendar</a>, checked ${esc(m.checked||'')}. Verify before relying on it.</p>
+      <p class="muted small">${m.source?`Source: <a href="${esc(m.source)}" target="_blank" rel="noopener">City Clerk meetings calendar</a>, checked ${esc(m.checked||'')}. Verify before relying on it.`:'Sample schedule and agenda for this prototype. Not from an official source.'}</p>
       <div class="bar">${addControls(m)}<button class="ghost" data-act="board" data-key="${esc(mk)}">Open meeting discussion (${ms.count})</button></div></div>
     <div class="card"><h2>Agenda items</h2><p class="muted small">Each item has its own space for community review comments. Comments do not change the official record.</p>${items||'<p class="muted">Agenda items have not been imported for this meeting yet.</p>'}</div>`;
 }
@@ -263,13 +272,13 @@ function boardsHtml(){
   const order=['body','meet','topic','place'];
   const titles={body:'Bodies',meet:'Meetings',topic:'Citywide topics',place:'Your districts'};
   return order.map(type=>{
-    const keys=allBoardKeys().filter(k=>k.startsWith(type+':')).filter(k=>!k.startsWith('place:')||mine(splitKey(k)[1])).filter(k=>!q||boardInfo(k).title.toLowerCase().includes(q));
+    const keys=allBoardKeys().filter(k=>k.startsWith(type+':')).filter(k=>!q||boardInfo(k).title.toLowerCase().includes(q));
     if(!keys.length) return '';
     return `<div class="card"><h2>${esc(titles[type])}</h2>${keys.map(boardRow).join('')}</div>`;
   }).join('')||'<div class="card"><p class="muted">No boards match that search.</p></div>';
 }
 function viewBoards(){
-  const keys=feedKeys().filter(k=>!k.startsWith('place:')||mine(splitKey(k)[1])).sort((a,b)=>boardStats(b).last.localeCompare(boardStats(a).last));
+  const keys=feedKeys().sort((a,b)=>boardStats(b).last.localeCompare(boardStats(a).last));
   const list=keys.length?keys.map(boardRow).join(''):'<p class="muted">You are not following any boards yet. Follow a body, a meeting, or a topic and it appears here.</p>';
   return `<div class="card"><h1>Your discussion boards</h1><p class="muted">The boards you follow, most recent activity first.</p>${list}
     <div class="bar" style="margin-top:12px"><button class="ghost" data-act="page" data-id="allboards">See all boards</button></div></div>`;
@@ -286,18 +295,14 @@ const KINDS=[['question','Question'],['information','Information, with a source'
 const KIND_LABEL=Object.fromEntries(KINDS);
 function viewBoard(){
   const info=boardInfo(state.boardKey), st=boardStats(state.boardKey);
-  const f=state.boardKey;
+  const f=state.boardKey, post=canPost(f);
   const threads=boardFor(f).threads;
   const list=threads.length?threads.map(t=>`<div class="thread"><button class="linkish" data-act="thread" data-key="${esc(f)}" data-id="${t.id}">${esc(t.title)}</button>
       <div class="bar" style="margin-top:4px"><span class="tag">${esc(KIND_LABEL[t.kind])}</span><span class="muted small">${t.posts.length} post${t.posts.length===1?'':'s'} · last activity ${esc(fmtShort(threadLast(t)))}</span></div></div>`).join('')
-    :'<p class="muted">No threads yet. Start the first one below.</p>';
+    :`<p class="muted">No threads yet.${post?' Start the first one below.':''}</p>`;
   const dt=state.drafts['newtitle:'+f]||'', db=state.drafts['newbody:'+f]||'', dk=state.drafts['newkind:'+f]||'question';
-  return `<div class="card">${backLink(f)}
-      <span class="tag">${esc(info.scope)}</span>${inScope(f)?'<span class="tag ok">In your area</span>':''}
-      <h1 style="margin-top:6px">${esc(info.title)}</h1><p>${esc(info.sub)}</p>
-      <div class="bar"><span class="muted small">${st.count} thread${st.count===1?'':'s'}</span>
-        <button class="${state.followed[f]?'':'ghost'}" data-act="follow" data-key="${esc(f)}" aria-pressed="${!!state.followed[f]}">${state.followed[f]?'Following':'Follow this board'}</button></div></div>
-    <div class="card"><h2>Start a thread</h2>
+  const form=post
+    ? `<div class="card"><h2>Start a thread</h2>
       <label for="nt" class="small">Title</label>
       <input id="nt" data-draft="newtitle:${esc(f)}" value="${esc(dt)}" placeholder="What do you want to talk about?" autocomplete="off">
       <label for="nk" class="small" style="display:block;margin-top:8px">Type</label>
@@ -305,23 +310,33 @@ function viewBoard(){
       <label for="nb" class="small" style="display:block;margin-top:8px">Your post</label>
       <textarea id="nb" rows="3" data-draft="newbody:${esc(f)}">${esc(db)}</textarea>
       <div class="err" id="newerr"></div>
-      <div style="margin-top:6px"><button data-act="newthread" data-key="${esc(f)}">Post thread</button></div></div>
+      <div style="margin-top:6px"><button data-act="newthread" data-key="${esc(f)}">Post thread</button></div></div>`
+    : `<div class="card"><h2>Follow only</h2><p class="muted">You can read and follow this board. Posting is limited to people whose districts cover it.</p></div>`;
+  return `<div class="card">${backLink(f)}
+      <span class="tag">${esc(info.scope)}</span> ${joinTag(f)}
+      <h1 style="margin-top:6px">${esc(info.title)}</h1><p>${esc(info.sub)}</p>
+      <div class="bar"><span class="muted small">${st.count} thread${st.count===1?'':'s'}</span>
+        <button class="${state.followed[f]?'':'ghost'}" data-act="follow" data-key="${esc(f)}" aria-pressed="${!!state.followed[f]}">${state.followed[f]?'Following':'Follow this board'}</button></div></div>
+    ${form}
     <div class="card"><h2>Threads</h2>${list}</div>`;
 }
 
 function viewThread(){
   const t=boardFor(state.boardKey).threads.find(x=>x.id===state.threadId);
   if(!t) return `<div class="card"><p class="muted">That thread could not be found.</p></div>`;
-  const info=boardInfo(state.boardKey);
-  const rk='reply:'+t.id;
+  const info=boardInfo(state.boardKey), rk='reply:'+t.id;
+  const reply=canPost(state.boardKey)
+    ? `<div class="card"><h2>Reply</h2>
+      <label for="rp" class="small">Your reply</label>
+      <textarea id="rp" rows="3" data-draft="${esc(rk)}">${esc(state.drafts[rk]||'')}</textarea>
+      <div class="err" role="alert">${esc(state.postError||'')}</div>
+      <div style="margin-top:6px"><button data-act="reply" data-key="${esc(state.boardKey)}" data-id="${esc(t.id)}">Post reply</button></div></div>`
+    : `<div class="card"><h2>Follow only</h2><p class="muted">Replies are limited to people whose districts cover this board.</p></div>`;
   return `<div class="card"><button class="ghost" data-act="board" data-key="${esc(state.boardKey)}" style="margin-bottom:10px">← ${esc(info.title)}</button>
       <span class="tag">${esc(KIND_LABEL[t.kind])}</span>
       <h1 style="margin-top:6px">${esc(t.title)}</h1></div>
     <div class="card"><h2>Posts</h2>${t.posts.map(p=>`<div class="post"><b>${esc(p.who)}</b> <span class="muted small">${esc(fmtShort(p.t))}</span><div>${esc(p.text)}</div></div>`).join('')}</div>
-    <div class="card"><h2>Reply</h2>
-      <label for="rp" class="small">Your reply</label>
-      <textarea id="rp" rows="3" data-draft="${esc(rk)}">${esc(state.drafts[rk]||'')}</textarea>
-      <div class="err" role="alert">${esc(state.postError||'')}</div><div style="margin-top:6px"><button data-act="reply" data-key="${esc(state.boardKey)}" data-id="${esc(t.id)}">Post reply</button></div></div>`;
+    ${reply}`;
 }
 
 /* ---------- shell ---------- */
@@ -370,7 +385,7 @@ async function signin(){
 }
 async function chooseAddress(id){
   state.addr=ADDRESSES.find(a=>a.id===id);
-  Object.assign(state,{page:'feed',toggles:{county:true,city:true,school:true,local:true},meetingId:null,postError:''});
+  Object.assign(state,{page:'feed',toggles:{fed:true,county:true,city:true,school:true,cpg:true},meetingId:null,postError:''});
   state.followed=baselineFollows(state.addr);persist();
   const places=Object.values(state.addr.d);
   const bodies=[...new Set(places.map(p=>DIST[p].body))].filter(Boolean);
@@ -391,6 +406,7 @@ async function postNewThread(key){
   const err=document.getElementById('newerr');
   if(!title||!body){ if(err) err.textContent='Add a title and your post first.'; return; }
   if(!state.me){ if(err) err.textContent='Sign in again to post.'; return; }
+  if(!canPost(key)){ if(err) err.textContent='Only people whose districts cover this board can post. You can follow it.'; return; }
   const [scope,id]=dbScope(key);
   try{
     const threadId=await dbPostThread({userId:state.me.id,scope,id,title,kind,body});
@@ -403,6 +419,7 @@ async function postReply(key,threadId){
   const rk='reply:'+threadId;
   const text=(state.drafts[rk]||'').trim();
   if(!text) return;
+  if(!canPost(key)){ state.postError='Only people whose districts cover this board can post.'; return render(); }
   try{
     await dbPostReply({userId:state.me.id,threadId,body:text});
     delete state.drafts[rk]; state.postError='';

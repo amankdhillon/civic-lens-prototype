@@ -124,11 +124,11 @@
       "source": "https://www.sandiegounified.org/about/board_of_education"
     },
     "fed-sd": {
-      "label": "U.S. House, San Diego County district",
+      "label": "U.S. House district (2026 map)",
       "rep": "Not checked yet",
       "body": "fed",
       "source": "",
-      "note": "Not checked. Add from an official source."
+      "note": "Congressional lines changed for 2026 under Proposition 50. Your district is not looked up from your address yet. Check it on an official map before relying on it."
     },
     "state-sd": {
       "label": "State Senate, San Diego County district",
@@ -137,26 +137,12 @@
       "source": "",
       "note": "Not checked. Add from an official source."
     },
-    "grp-d3": {
-      "label": "Neighborhood group, District 3",
-      "rep": "Organized by residents (sample)",
-      "body": "grp-d3",
+    "cpg-uptown": {
+      "label": "Uptown Planners planning area",
+      "rep": "Elected voting members",
+      "body": "cpg-uptown",
       "source": "",
-      "sample": true
-    },
-    "grp-east": {
-      "label": "Neighborhood group, Eastside",
-      "rep": "Organized by residents (sample)",
-      "body": "grp-east",
-      "source": "",
-      "sample": true
-    },
-    "grp-coast": {
-      "label": "Neighborhood group, Coastal",
-      "rep": "Organized by residents (sample)",
-      "body": "grp-coast",
-      "source": "",
-      "sample": true
+      "note": "Sample mapping. Confirm the planning area boundary on the group's official page before relying on it."
     }
   },
   "bodies": {
@@ -583,36 +569,6 @@
       "checked": "2026-11-18",
       "prototype": false
     },
-    "grp-d3": {
-      "name": "District 3 Neighborhood Council (sample)",
-      "level": "special",
-      "kind": "community",
-      "about": "Sample community group. Not a government body.",
-      "source": "",
-      "checked": "2026-11-18",
-      "sample": true,
-      "prototype": false
-    },
-    "grp-east": {
-      "name": "Eastside Neighbors Coalition (sample)",
-      "level": "special",
-      "kind": "community",
-      "about": "Sample community group. Not a government body.",
-      "source": "",
-      "checked": "2026-11-18",
-      "sample": true,
-      "prototype": false
-    },
-    "grp-coast": {
-      "name": "Coastal Community Forum (sample)",
-      "level": "special",
-      "kind": "community",
-      "about": "Sample community group. Not a government body.",
-      "source": "",
-      "checked": "2026-11-18",
-      "sample": true,
-      "prototype": false
-    },
     "housing-auth": {
       "name": "Housing Authority (as listed on the City Clerk calendar)",
       "level": "city",
@@ -623,134 +579,445 @@
       "source": "https://www.sandiego.gov/city-clerk/officialdocs/meetings-calendar",
       "checked": "2026-11-18",
       "prototype": false
+    },
+    "cpg-uptown": {
+      "name": "Uptown Planners",
+      "level": "city",
+      "kind": "board",
+      "label": "Community planning group",
+      "about": "Recognized community planning group. Advises the City on land use and neighborhood issues. Its voting members are elected by the community.",
+      "schedule": "First and third Thursdays at 6:00 p.m. (sample schedule; confirm with the group).",
+      "where": "To be confirmed with the group.",
+      "source": "",
+      "checked": "",
+      "prototype": true
     }
   },
   "meetings": [
-    {
-      "id": "cal-2026-11-05-edir",
-      "body": "cm-econdev",
-      "date": "2026-11-05",
-      "time": "9:00 a.m.",
-      "title": "Economic Development and Intergovernmental Relations Committee"
-    },
     {
       "id": "cal-2026-11-05-landuse-adj",
       "body": "cm-landuse",
       "date": "2026-11-05",
       "time": "1:00 p.m.",
-      "title": "Adjourned Land Use & Housing Committee"
+      "title": "Adjourned Land Use & Housing Committee",
+      "items": []
+    },
+    {
+      "id": "cal-2026-11-05-cpg",
+      "body": "cpg-uptown",
+      "date": "2026-11-05",
+      "time": "6:00 p.m.",
+      "title": "Regular meeting",
+      "source": "",
+      "checked": "",
+      "items": [
+        {
+          "id": "it-1105-1",
+          "title": "Hillcrest mixed-use project, development permit review",
+          "action": "Advisory",
+          "summary": "Reviews building height, parking, and street-level design for a six-story mixed-use proposal.",
+          "result": "Recommended with conditions"
+        },
+        {
+          "id": "it-1105-2",
+          "title": "Bylaws update",
+          "action": "Advisory",
+          "summary": "Updates meeting notice rules and officer terms.",
+          "result": "Adopted"
+        }
+      ]
+    },
+    {
+      "id": "cal-2026-11-05-edir",
+      "body": "cm-econdev",
+      "date": "2026-11-05",
+      "time": "9:00 a.m.",
+      "title": "Economic Development and Intergovernmental Relations Committee",
+      "items": []
     },
     {
       "id": "cal-2026-11-09-council-am",
       "body": "sdcc",
       "date": "2026-11-09",
       "time": "10:00 a.m.",
-      "title": "City Council (closed session on Monday)"
+      "title": "City Council (closed session on Monday)",
+      "items": []
     },
     {
       "id": "cal-2026-11-09-council-pm",
       "body": "sdcc",
       "date": "2026-11-09",
       "time": "2:00 p.m.",
-      "title": "City Council"
-    },
-    {
-      "id": "cal-2026-11-10-housing",
-      "body": "housing-auth",
-      "date": "2026-11-10",
-      "time": "2:00 p.m.",
-      "title": "Housing Authority"
+      "title": "City Council",
+      "items": [
+        {
+          "id": "it-1109-1",
+          "title": "Street repaving contract amendment, Districts 3 and 6",
+          "action": "Final decision",
+          "summary": "Adds $4.2 million to the existing arterial paving contract for Districts 3 and 6.",
+          "result": "Adopted, 9-0"
+        },
+        {
+          "id": "it-1109-2",
+          "title": "Weekend construction hours, noise ordinance update",
+          "action": "Final decision",
+          "summary": "Sets a Saturday construction window that starts at 8 a.m. and adds a 48-hour permit notice.",
+          "result": "Adopted, 7-2"
+        }
+      ]
     },
     {
       "id": "cal-2026-11-10-council-am",
       "body": "sdcc",
       "date": "2026-11-10",
       "time": "10:00 a.m.",
-      "title": "City Council"
+      "title": "City Council",
+      "items": [
+        {
+          "id": "it-1110-1",
+          "title": "Balboa Park north entrance: trail and lighting funding",
+          "action": "Final decision",
+          "summary": "Allocates $650,000 for trail repairs and lighting at the north entrance.",
+          "result": "Approved, 9-0"
+        }
+      ]
+    },
+    {
+      "id": "cal-2026-11-10-housing",
+      "body": "housing-auth",
+      "date": "2026-11-10",
+      "time": "2:00 p.m.",
+      "title": "Housing Authority",
+      "items": []
     },
     {
       "id": "cal-2026-11-10-council-pm",
       "body": "sdcc",
       "date": "2026-11-10",
       "time": "2:00 p.m.",
-      "title": "City Council"
+      "title": "City Council",
+      "items": [
+        {
+          "id": "it-1110-2",
+          "title": "Budget amendment: move reserves to road and sidewalk repair",
+          "action": "Final decision",
+          "summary": "Moves $18 million from reserves to road and sidewalk repair. The staff summary is linked from the item page.",
+          "result": "Adopted, 6-3"
+        },
+        {
+          "id": "it-1110-3",
+          "title": "Short-term rental permit enforcement update",
+          "action": "Advisory",
+          "summary": "Informational report on complaints, inspections, and permit revocations citywide.",
+          "result": "Received"
+        }
+      ]
     },
     {
-      "id": "cal-2026-11-12-audit",
-      "body": "cm-audit",
-      "date": "2026-11-12",
+      "id": "cal-2026-11-10-bos",
+      "body": "bos",
+      "date": "2026-11-10",
       "time": "9:00 a.m.",
-      "title": "Audit Committee"
+      "title": "Board of Supervisors regular meeting",
+      "source": "",
+      "checked": "",
+      "items": [
+        {
+          "id": "it-1110b-1",
+          "title": "Behavioral health beds, North County campus",
+          "action": "Final decision",
+          "summary": "Approves operating funds for 40 short-term behavioral health beds.",
+          "result": "Approved, 5-0"
+        },
+        {
+          "id": "it-1110b-2",
+          "title": "Library hours restored at rural branches",
+          "action": "Final decision",
+          "summary": "Restores weekend hours at six rural branch libraries.",
+          "result": "Approved, 4-1"
+        }
+      ]
     },
     {
       "id": "cal-2026-11-12-environment",
       "body": "cm-environment",
       "date": "2026-11-12",
       "time": "1:00 p.m.",
-      "title": "Environment Committee"
+      "title": "Environment Committee",
+      "items": []
+    },
+    {
+      "id": "cal-2026-11-12-audit",
+      "body": "cm-audit",
+      "date": "2026-11-12",
+      "time": "9:00 a.m.",
+      "title": "Audit Committee",
+      "items": []
     },
     {
       "id": "cal-2026-11-16-council-am",
       "body": "sdcc",
       "date": "2026-11-16",
       "time": "10:00 a.m.",
-      "title": "City Council (closed session on Monday)"
+      "title": "City Council (closed session on Monday)",
+      "items": []
     },
     {
       "id": "cal-2026-11-16-council-pm",
       "body": "sdcc",
       "date": "2026-11-16",
       "time": "2:00 p.m.",
-      "title": "City Council"
+      "title": "City Council",
+      "items": [
+        {
+          "id": "it-1116-1",
+          "title": "Council public comment rules",
+          "action": "Final decision",
+          "summary": "Proposes changing general public comment from three minutes to two, and scheduled items from two minutes to three.",
+          "result": "Continued to Dec 1"
+        }
+      ]
     },
     {
       "id": "cal-2026-11-17-council-am",
       "body": "sdcc",
       "date": "2026-11-17",
       "time": "10:00 a.m.",
-      "title": "City Council"
+      "title": "City Council",
+      "items": [
+        {
+          "id": "it-1117-1",
+          "title": "Affordable housing fee waiver, 5th Avenue project",
+          "action": "Final decision",
+          "summary": "Waives certain impact fees for 84 affordable units.",
+          "result": "Approved, 7-2"
+        }
+      ]
     },
     {
       "id": "cal-2026-11-17-council-pm",
       "body": "sdcc",
       "date": "2026-11-17",
       "time": "2:00 p.m.",
-      "title": "City Council"
+      "title": "City Council",
+      "items": [
+        {
+          "id": "it-1117-2",
+          "title": "Annual stormwater permit report",
+          "action": "Advisory",
+          "summary": "Staff reports on runoff inspections and on sites with repeated violations, with a map by council district.",
+          "result": "Received and filed"
+        },
+        {
+          "id": "it-1117-3",
+          "title": "Park cleanup volunteer program",
+          "action": "Advisory",
+          "summary": "Summarizes volunteer hours and proposes a neighborhood cleanup grant.",
+          "result": "Received"
+        }
+      ]
     },
     {
-      "id": "cal-2026-11-18-budget",
-      "body": "cm-budget",
-      "date": "2026-11-18",
+      "id": "cal-2026-11-17-bos",
+      "body": "bos",
+      "date": "2026-11-17",
       "time": "9:00 a.m.",
-      "title": "Budget & Government Efficiency Committee"
+      "title": "Board of Supervisors regular meeting",
+      "source": "",
+      "checked": "",
+      "items": [
+        {
+          "id": "it-1117b-1",
+          "title": "Winter shelter capacity contract, 2026-27 season",
+          "action": "Final decision",
+          "summary": "Adds 600 winter shelter beds across county-contracted sites.",
+          "result": "Approved, 5-0"
+        },
+        {
+          "id": "it-1117b-2",
+          "title": "Regional parks and trails maintenance report",
+          "action": "Advisory",
+          "summary": "Annual maintenance backlog report with a list of trails scheduled for repair.",
+          "result": "Received"
+        }
+      ]
     },
     {
       "id": "cal-2026-11-18-publicsafety",
       "body": "cm-publicsafety",
       "date": "2026-11-18",
       "time": "2:00 p.m.",
-      "title": "Public Safety Committee"
+      "title": "Public Safety Committee",
+      "items": []
+    },
+    {
+      "id": "cal-2026-11-18-budget",
+      "body": "cm-budget",
+      "date": "2026-11-18",
+      "time": "9:00 a.m.",
+      "title": "Budget & Government Efficiency Committee",
+      "items": []
     },
     {
       "id": "cal-2026-11-19-ati",
       "body": "cm-active-transport",
       "date": "2026-11-19",
       "time": "1:00 p.m.",
-      "title": "Active Transportation and Infrastructure Committee"
+      "title": "Active Transportation and Infrastructure Committee",
+      "items": []
+    },
+    {
+      "id": "cal-2026-11-19-cpg",
+      "body": "cpg-uptown",
+      "date": "2026-11-19",
+      "time": "6:00 p.m.",
+      "title": "Regular meeting",
+      "source": "",
+      "checked": "",
+      "items": [
+        {
+          "id": "it-1119-1",
+          "title": "Park Boulevard corridor plan: presentation",
+          "action": "Advisory",
+          "summary": "City staff presents the corridor plan for bike lanes, crossings, and parking changes, and asks for comments."
+        },
+        {
+          "id": "it-1119-2",
+          "title": "Short-term rental complaints report",
+          "action": "Advisory",
+          "summary": "Code enforcement report on complaints in the planning area over the last quarter."
+        },
+        {
+          "id": "it-1119-3",
+          "title": "Officer elections",
+          "action": "Advisory",
+          "summary": "Election of chair and vice chair for the coming year."
+        }
+      ]
     },
     {
       "id": "cal-2026-11-20-landuse",
       "body": "cm-landuse",
       "date": "2026-11-20",
       "time": "9:00 a.m.",
-      "title": "Special Land Use & Housing Committee"
+      "title": "Special Land Use & Housing Committee",
+      "items": []
+    },
+    {
+      "id": "cal-2026-11-30-council-am",
+      "body": "sdcc",
+      "date": "2026-11-30",
+      "time": "10:00 a.m.",
+      "title": "City Council (closed session on Monday)",
+      "source": "",
+      "checked": "",
+      "items": []
+    },
+    {
+      "id": "cal-2026-12-01-council-pm",
+      "body": "sdcc",
+      "date": "2026-12-01",
+      "time": "2:00 p.m.",
+      "title": "City Council",
+      "source": "",
+      "checked": "",
+      "items": [
+        {
+          "id": "it-1201-1",
+          "title": "Council public comment rules (continued from Nov 16)",
+          "action": "Final decision",
+          "summary": "Second reading of the speaking time rules. Staff proposes two minutes for general comment and three minutes for scheduled items."
+        },
+        {
+          "id": "it-1201-2",
+          "title": "Traffic calming, 30th Street between Upas and University",
+          "action": "Final decision",
+          "summary": "Approves the design and $1.1 million for speed humps, a crossing signal, and a pilot bike lane."
+        },
+        {
+          "id": "it-1201-3",
+          "title": "Outreach funding for recognized community planning groups",
+          "action": "Advisory",
+          "summary": "Proposes annual outreach funding for recognized planning groups, including translation support."
+        }
+      ]
     },
     {
       "id": "cal-2026-12-01-sdusd",
       "body": "sdusd",
       "date": "2026-12-01",
       "time": "5:00 p.m.",
-      "title": "Board of Education Regular Meeting (livestreamed)"
+      "title": "Board of Education Regular Meeting (livestreamed)",
+      "items": []
+    },
+    {
+      "id": "cal-2026-12-03-cpg",
+      "body": "cpg-uptown",
+      "date": "2026-12-03",
+      "time": "6:00 p.m.",
+      "title": "Regular meeting",
+      "source": "",
+      "checked": "",
+      "items": [
+        {
+          "id": "it-1203-1",
+          "title": "Recommendation on the Park Boulevard corridor plan",
+          "action": "Advisory",
+          "summary": "Vote on a recommendation to the City on the corridor plan."
+        },
+        {
+          "id": "it-1203-2",
+          "title": "Holiday open house and outreach plan",
+          "action": "Advisory",
+          "summary": "Plans a December open house and a schedule for flyers and online notices."
+        }
+      ]
+    },
+    {
+      "id": "cal-2026-12-07-council-pm",
+      "body": "sdcc",
+      "date": "2026-12-07",
+      "time": "2:00 p.m.",
+      "title": "City Council",
+      "source": "",
+      "checked": "",
+      "items": [
+        {
+          "id": "it-1207-1",
+          "title": "Police response times by council district",
+          "action": "Advisory",
+          "summary": "Staff proposes a monthly response-time report by council district, starting in January."
+        },
+        {
+          "id": "it-1207-2",
+          "title": "Accessory dwelling unit impact fee study",
+          "action": "Final decision",
+          "summary": "Directs staff to return with fee options that treat units under 800 square feet differently."
+        }
+      ]
+    },
+    {
+      "id": "cal-2026-12-08-bos",
+      "body": "bos",
+      "date": "2026-12-08",
+      "time": "9:00 a.m.",
+      "title": "Board of Supervisors regular meeting",
+      "source": "",
+      "checked": "",
+      "items": [
+        {
+          "id": "it-1208-1",
+          "title": "Six-month transit fare pilot on County routes",
+          "action": "Final decision",
+          "summary": "Proposes reduced fares for youth and seniors on county-operated routes for six months."
+        },
+        {
+          "id": "it-1208-2",
+          "title": "Emergency medical services contract renewal",
+          "action": "Final decision",
+          "summary": "Renews the ambulance services contract for three years with a new response-time standard."
+        }
+      ]
     }
   ],
   "meeting_source": "https://www.sandiego.gov/city-clerk/officialdocs/meetings-calendar",
