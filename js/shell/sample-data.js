@@ -62,4 +62,8 @@ const SEED_BOARDS={
     T('t25','Public comment: two minutes or three?','opinion',[P('Helen W.','Two minutes is too short for complex items. Three minutes minimum, please.','2026-11-18'),P('Lena G.','Two minutes is enough if you write a summary and bring the rest in writing.','2026-11-18')])]},
   'item:it-1208-1':{threads:[
     T('t17','Transit fare pilot: support or not?','opinion',[P('Marcus T.','A youth and senior fare pilot would help my commute. Hoping the December 8 item passes.','2026-11-18'),P('Priya S.','Wait for the cost estimate before deciding. Pilot costs matter.','2026-11-18')])]},
+  'item:it-1201-2':{threads:[
+    T('t26','Plain explanation: what the 30th Street changes would do','information',[P('Helen W.','Humps slow traffic between Upas and University, and a crossing signal is included. Staff report link to be added.','2026-11-18')])]},
+  'item:it-1110-2':{threads:[
+    T('t27','Plain explanation: what the reserve move means','information',[P('Dana K.','Roads and sidewalks get $18 million from reserves this year. The reserve minimum still applies, according to the staff summary.','2026-11-11')])]},
 };

@@ -24,6 +24,7 @@ const boardFor=k=>{
 const threadLast=t=>t.posts.length?t.posts[t.posts.length-1].t:'';
 const postCount=k=>boardFor(k).threads.reduce((n,t)=>n+t.posts.length,0);
 const whenLabel=d=>{const x=new Date(d+'T12:00:00');return{wd:x.toLocaleDateString('en-US',{weekday:'short'}),day:x.toLocaleDateString('en-US',{month:'short',day:'numeric'})};};
+const explainCount=k=>boardFor(k).threads.filter(x=>x.kind==='information').length;
 const actLine=k=>{const st=boardStats(k),n=postCount(k);return `${st.count} thread${st.count===1?'':'s'} · ${n} post${n===1?'':'s'}${st.last?` · last post ${fmtShort(st.last)}`:''}`;};
 const boardStats=k=>{const th=boardFor(k).threads;const last=th.reduce((m,t)=>threadLast(t)>m?threadLast(t):m,'');return{count:th.length,last};};
 const findMeeting=id=>MEETINGS.find(m=>m.id===id);
@@ -145,7 +146,7 @@ function feedMeetingCard(m){
       <p class="eyebrow">Upcoming meeting · ${esc(BODIES[m.body].name)}</p>
       <h3><button class="linkish" data-act="meeting" data-id="${m.id}">${esc(m.title)}</button></h3>
       <p>${n?`${n} agenda item${n===1?'':'s'}${fin?`, ${fin} final vote${fin===1?'':'s'} by this body`:''}: ${esc(m.items.slice(0,2).map(i=>i.title).join('; '))}${n>2?'; and more':''}.`:'The agenda has not been posted yet.'}</p>
-      ${first?`<p class="small"><b>Why it matters:</b> ${esc(first.why)}</p>`:''}
+      ${first?`<p class="small"><b>What it could do:</b> ${esc(first.stakes)}</p>`:''}
       <div class="fi-foot">${addControls(m)}<button class="ghost" data-act="board" data-key="${esc(mk)}">Open meeting discussion (${boardStats(mk).count})</button></div>
     </div></article>`;
 }
@@ -157,7 +158,7 @@ function feedDecisionCard(m,i){
       <p class="eyebrow">Decision · ${esc(BODIES[m.body].name)}</p>
       <h3><button class="linkish" data-act="meeting" data-id="${m.id}">${esc(i.title)}</button></h3>
       <p>${esc(i.summary)}</p>
-      <p class="small"><b>Why it matters:</b> ${esc(i.why)}</p>
+      <p class="small"><b>What it did:</b> ${esc(i.stakes)}</p>
       <div class="fi-foot"><span class="tag ok">Result: ${esc(i.result)}</span><button class="ghost" data-act="board" data-key="${esc(ik)}">Discuss this item (${boardStats(ik).count})</button></div>
     </div></article>`;
 }
@@ -292,12 +293,13 @@ function viewMeeting(){
     : 'The agenda has not been loaded for this meeting.';
   const items=m.items.map((it,i)=>{
     const ik='item:'+it.id, st=boardStats(ik), isFinal=it.action==='Final decision';
+    const ex=explainCount(ik);
     return `<li class="agenda-item"><span class="ai-num" aria-hidden="true">${i+1}</span><div class="ai-main">
       <h3>${esc(it.title)}</h3>
-      <p class="tags"><span class="tag ${isFinal?'final':''}">${isFinal?'Final vote by this body':'Advisory'}</span>${it.result?`<span class="tag ok">Result: ${esc(it.result)}</span>`:''}</p>
+      <p class="tags"><span class="tag ${isFinal?'final':''}">${isFinal?'Final vote by this body':'Advisory'}</span>${past?(it.result?`<span class="tag ok">Passed or result: ${esc(it.result)}</span>`:''):'<span class="tag">Upcoming</span>'}</p>
       <p>${esc(it.summary)}</p>
-      <p class="small"><b>Why it matters:</b> ${esc(it.why)}</p>
-      <div class="bar"><button class="ghost" data-act="board" data-key="${esc(ik)}">Discuss this item (${st.count} thread${st.count===1?'':'s'})</button></div>
+      <p class="small"><b>${past?'What it did':'What it could do'}:</b> ${esc(it.stakes)}</p>
+      <div class="bar"><button class="ghost" data-act="board" data-key="${esc(ik)}">Discuss this item (${st.count} thread${st.count===1?'':'s'}, ${ex} plain explanation${ex===1?'':'s'})</button></div>
     </div></li>`;
   }).join('');
   return `<section class="card">
@@ -310,7 +312,7 @@ function viewMeeting(){
     </section>
     <section class="card"><h2>Overview</h2><p>${esc(overview)}</p>
       <p class="muted small">${m.source?`Source: <a href="${esc(m.source)}" target="_blank" rel="noopener">City Clerk meetings calendar</a>, checked ${esc(m.checked||'')}. Verify before relying on it.`:'Sample schedule and agenda for this prototype. Not from an official source.'}</p></section>
-    <section class="card"><h2>Agenda</h2><p class="muted small">Each item has its own discussion for community comments. Comments do not change the official record.</p>
+    <section class="card"><h2>Agenda</h2><p class="muted small">Each item shows what it does or could do in plain language, then has its own discussion. Plain explanations are written by residents and are not official.</p>
       ${items?`<ol class="agenda">${items}</ol>`:'<p class="muted">Agenda items have not been loaded for this meeting yet.</p>'}</section>
     <section class="card"><h2>Meeting discussion</h2><p class="muted small">General comments about the meeting as a whole. Comments on a specific item stay with that item.</p>
       <div class="bar"><button class="ghost" data-act="board" data-key="${esc(mk)}">Open meeting discussion (${ms.count} thread${ms.count===1?'':'s'})</button></div></section>`;
@@ -346,6 +348,24 @@ function viewAllBoards(){
     <div id="board-list">${boardsHtml()}</div>`;
 }
 
+// Item panel on an agenda item's board: what it did or could do, and plain explanations written by residents.
+function itemPanel(k){
+  const [type,id]=splitKey(k);
+  if(type!=='item') return '';
+  const f=findItem(id); if(!f) return '';
+  const {m,it}=f, past=isPast(m), ex=boardFor(k).threads.filter(x=>x.kind==='information');
+  const canWrite=canPost(k);
+  return `<section class="card"><h2>What this item means</h2>
+    <p class="tags"><span class="tag ${it.action==='Final decision'?'final':''}">${it.action==='Final decision'?'Final vote by this body':'Advisory'}</span>${past?(it.result?`<span class="tag ok">Passed or result: ${esc(it.result)}</span>`:''):'<span class="tag">Upcoming</span>'}</p>
+    <p><b>${past?'What it did':'What it could do'}:</b> ${esc(it.stakes)}</p>
+    <p class="muted small">This plain summary was written for the prototype. It is not an official source. Check the agenda item before relying on it.</p>
+    <h3 style="margin-top:18px">Plain explanations from residents</h3>
+    <p class="muted small">Written by residents, not by the city. Each explanation should link to the official record.</p>
+    ${ex.length?ex.map(x=>`<div class="thread"><span class="tag">Community explanation</span><br><button class="linkish" data-act="thread" data-key="${esc(k)}" data-id="${x.id}">${esc(x.title)}</button> <span class="muted small">${x.posts.length} post${x.posts.length===1?'':'s'}</span></div>`).join(''):'<p class="muted">No plain explanations yet.</p>'}
+    <div class="bar">${canWrite?`<button class="ghost" data-act="explain" data-key="${esc(k)}">Write a plain explanation</button>`:'<span class="muted small">Only people whose districts cover this item can write an explanation. You can still read them.</span>'}</div>
+  </section>`;
+}
+
 const KINDS=[['question','Question'],['information','Information, with a source'],['opinion','Opinion']];
 const KIND_LABEL=Object.fromEntries(KINDS);
 function viewBoard(){
@@ -367,7 +387,7 @@ function viewBoard(){
       <div class="err" id="newerr"></div>
       <div style="margin-top:6px"><button data-act="newthread" data-key="${esc(f)}">Post thread</button></div></div>`
     : `<div class="card"><h2>Follow only</h2><p class="muted">You can read and follow this board. Posting is limited to people whose districts cover it.</p></div>`;
-  return `<div class="card">${backLink(f)}
+  return `${itemPanel(f)}<div class="card">${backLink(f)}
       <span class="tag">${esc(info.scope)}</span> ${joinTag(f)}
       <h1 style="margin-top:6px">${esc(info.title)}</h1><p>${esc(info.sub)}</p>
       <div class="bar"><span class="muted small">${st.count} thread${st.count===1?'':'s'}</span>
@@ -515,6 +535,7 @@ document.addEventListener('click',e=>{
   if(act==='board') return go('board',{boardKey:key,threadId:null});
   if(act==='thread') return go('thread',{boardKey:key,threadId:id});
   if(act==='follow'){state.followed[key]=!state.followed[key];persist();return render();}
+  if(act==='explain'){state.drafts['newkind:'+key]='information';if(!state.drafts['newtitle:'+key])state.drafts['newtitle:'+key]='Plain explanation';render();const nt=document.getElementById('nt');if(nt) nt.focus();return;}
   if(act==='newthread') return postNewThread(key);
   if(act==='reply') return postReply(key,id);
 });
