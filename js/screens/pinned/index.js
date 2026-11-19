@@ -4,15 +4,15 @@ import { esc } from '../../lib/dom.js';
 import { STAGE_LABEL } from '../../config.js';
 import { skeleton, empty } from '../../components/ui.js';
 import { pinButton, bindPins } from '../../components/pin-button.js';
-import { listAllBodies, getItem } from '../../services/bodies.js';
+import { listBodiesByIds, getItem } from '../../services/bodies.js';
 
 export async function render(root) {
   root.innerHTML = skeleton(3);
   const [bodies, items] = await Promise.all([
-    listAllBodies(),
+    listBodiesByIds([...state.pins.body]),
     Promise.all([...state.pins.item].map(id => getItem(id))),
   ]);
-  const followed = bodies.filter(b => state.pins.body.has(b.id));
+  const followed = bodies;
   const pinnedItems = items.filter(Boolean);
 
   root.innerHTML = `
@@ -55,5 +55,6 @@ export async function render(root) {
 
     <p class="row__meta"><a href="#/calendar">Open your calendar</a></p>`;
 
-  bindPins(root, () => {});
+  // Removing something here takes it off the page straight away.
+  bindPins(root, (kind, id, pinned) => { if (!pinned) render(root); });
 }

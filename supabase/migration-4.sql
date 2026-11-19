@@ -17,7 +17,7 @@ create policy pins_own on pins for all to authenticated
 revoke all on pins from anon;
 grant select, insert, delete on pins to authenticated;
 
--- General discussion on a place. Only residents of the place can post. Everyone can read.
+-- General discussion on a place. Only residents of the place can post. Signed-in people can read.
 create table if not exists place_comments (
   id uuid primary key default gen_random_uuid(),
   place_id text not null references places(id) on delete cascade,
@@ -30,6 +30,9 @@ create table if not exists place_comments (
 );
 create index if not exists place_comments_idx on place_comments (place_id, created_at);
 alter table place_comments enable row level security;
+-- Reads go through place_comment_view (the view owner reads the table). This policy makes the rule explicit.
+drop policy if exists place_comments_read on place_comments;
+create policy place_comments_read on place_comments for select to authenticated using (true);
 drop policy if exists place_comments_insert on place_comments;
 create policy place_comments_insert on place_comments for insert to authenticated with check (
   author_id = auth.uid()

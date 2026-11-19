@@ -89,3 +89,20 @@
   .rail a, .rail .soon { flex: 1; min-height: 56px; }
   .row { padding: var(--space-3); }
 }
+
+/* Pin and join controls: one icon button everywhere */
+.pin-btn { flex: none; width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; border-radius: var(--radius-sm); border: 1px solid var(--border-control); background: var(--surface); color: var(--ink); cursor: pointer; }
+.pin-btn:hover { border-color: var(--brand); }
+.pin-btn[aria-pressed="true"] { background: var(--navy); border-color: var(--navy); color: var(--off-white); }
+.pin-btn:disabled { opacity: 0.5; cursor: wait; }
+
+/* Feed, calendar, and pinned */
+.meeting__head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-3); }
+.meeting__head h3 { margin: 0; font-size: 1.05rem; }
+.item__head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-3); }
+.item__head h1 { margin: 0; }
+.rows a.row__text { text-decoration: none; color: inherit; min-width: 0; }
+.rows a.row__text:hover .row__name { text-decoration: underline; }
+.row__text { display: flex; flex-direction: column; min-width: 0; }
+.row__text .row__name { margin: 0; }
+.stack h2 { font-size: 1rem; margin: 0; }

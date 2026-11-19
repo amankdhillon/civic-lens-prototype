@@ -9,6 +9,7 @@ import { listComments, addComment } from '../../services/comments.js';
 import { stageSteps } from '../../components/stages.js';
 import { commentListHtml, composerHtml } from '../../components/comments.js';
 import { skeleton, empty } from '../../components/ui.js';
+import { pinButton, bindPins } from '../../components/pin-button.js';
 import { toast } from '../../components/toast.js';
 
 function howToComment(item) {
@@ -46,7 +47,10 @@ export async function render(root, [id]) {
     <a class="back" href="#/body/${esc(m.bodyId)}">${esc(m.bodyName)}</a>
     <article class="item stack">
       <p class="meta">${esc(fmtDateTime(m.startsAt, true))}${m.location ? ` · ${esc(m.location)}` : ''}</p>
-      <h1>${esc(item.title)}</h1>
+      <div class="item__head">
+        <h1>${esc(item.title)}</h1>
+        ${pinButton({ kind: 'item', id, name: item.title, pinned: state.pins.item.has(id) })}
+      </div>
       <p><strong>Who decides:</strong> ${item.decidedBy ? esc(item.decidedBy) : 'not yet confirmed'}</p>
       ${item.approvalPath.length ? `<p class="path">Path: ${item.approvalPath.map(esc).join(' → ')}</p>` : ''}
       ${stageSteps(item.stage)}
@@ -103,4 +107,6 @@ export async function render(root, [id]) {
       errorEl.textContent = err.message;
     }
   });
+
+  bindPins(root, () => {});
 }

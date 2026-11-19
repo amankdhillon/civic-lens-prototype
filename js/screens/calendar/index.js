@@ -45,5 +45,5 @@ export async function render(root) {
           </section>`).join('')
       : empty('No meetings on your calendar yet. Add one from a body or a place.')}`;
 
-  bindPins(root, () => {});
+  bindPins(root, (kind, id, pinned) => { if (!pinned) render(root); });
 }

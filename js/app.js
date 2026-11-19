@@ -7,6 +7,7 @@ import { esc } from './lib/dom.js';
 import { SUPABASE_URL } from './config.js';
 import { startRouter } from './router.js';
 import { renderRail } from './components/rail.js';
+import { loadPins } from './services/pins.js';
 
 const app = document.getElementById('app');
 const corner = document.getElementById('me');
@@ -24,6 +25,7 @@ corner.addEventListener('click', async e => {
     await signOut();
     await ensureSession();
     state.me = null;
+    state.pins = { body: new Set(), meeting: new Set(), item: new Set() };
     toast('Signed out');
     go('/welcome');
   } catch (err) {
@@ -31,7 +33,9 @@ corner.addEventListener('click', async e => {
   }
 });
 
-window.addEventListener('hashchange', () => { paintCorner(); renderRail(); });
+const refreshChrome = () => { paintCorner(); renderRail(); };
+window.addEventListener('hashchange', refreshChrome);
+window.addEventListener('route:refresh', refreshChrome);
 
 async function boot() {
   if (!location.hash) history.replaceState(null, '', '#/');
@@ -41,6 +45,7 @@ async function boot() {
     try {
       await ensureSession();
       state.me = await loadMe();
+      if (state.me) await loadPins(state.me.id);
     } catch (e) {
       state.bootError = e;
     }

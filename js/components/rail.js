@@ -1,23 +1,21 @@
-// Navigation: a side rail on wide screens, a bottom bar on phones. Same markup, styled by CSS.
+// Navigation: a side rail on wide screens, a bottom bar on phones. Shown only after sign-in.
+import { state } from '../state.js';
 import { currentPath } from '../lib/nav.js';
 import { svg } from './icons.js';
 
+const ITEMS = [
+  { href: '/', label: 'Feed', icon: 'home', match: p => p === '/' || p.startsWith('/body') || p.startsWith('/item') },
+  { href: '/places', label: 'Places', icon: 'map', match: p => p.startsWith('/place') },
+  { href: '/calendar', label: 'Calendar', icon: 'calendar', match: p => p === '/calendar' },
+  { href: '/pinned', label: 'Pinned', icon: 'star', match: p => p === '/pinned' },
+];
+
 export function renderRail() {
   const rail = document.getElementById('rail');
+  if (!state.me?.state) { rail.innerHTML = ''; return; }
   const path = currentPath();
-  const item = (href, label, icon, active) => `
-    <a href="#${href}" ${active ? 'aria-current="page"' : ''}>
-      ${svg(icon, 22)}<span>${label}</span>
-    </a>`;
-  const soon = (label, icon) => `
-    <span class="soon" aria-disabled="true">
-      ${svg(icon, 22)}<span>${label}</span><span class="sr-only">, coming soon</span>
-    </span>`;
-
-  rail.innerHTML = [
-    item('/', 'Home', 'home', path === '/' || path.startsWith('/body') || path.startsWith('/item')),
-    item('/', 'Places', 'star', path.startsWith('/place')),
-    soon('Calendar', 'calendar'),
-    soon('Pinned', 'star'),
-  ].join('');
+  rail.innerHTML = ITEMS.map(i => `
+    <a href="#${i.href}" ${i.match(path) ? 'aria-current="page"' : ''}>
+      ${svg(i.icon, 22)}<span>${i.label}</span>
+    </a>`).join('');
 }

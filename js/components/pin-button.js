@@ -3,8 +3,7 @@ import { esc } from '../lib/dom.js';
 import { svg } from './icons.js';
 import { state } from '../state.js';
 import { setPin } from '../services/pins.js';
-import { announce } from './toast.js';
-import { toast } from './toast.js';
+import { announce, toast } from './toast.js';
 
 const VERBS = {
   body: ['Follow', 'Unfollow'],
@@ -12,6 +11,9 @@ const VERBS = {
   item: ['Pin', 'Unpin'],
   district: ['Join', 'Leave'],
 };
+
+// Kinds this module can pin. Districts are joined on the place page instead.
+const PINNABLE = ['body', 'meeting', 'item'];
 
 const labelFor = (kind, name, pinned) => `${VERBS[kind][pinned ? 1 : 0]} ${name}`;
 
@@ -38,6 +40,7 @@ export function bindPins(root, onChange) {
     const btn = e.target.closest('[data-action="pin"]');
     if (!btn) return;
     const { kind, id, name } = btn.dataset;
+    if (!PINNABLE.includes(kind)) return;
     const pinned = !state.pins[kind].has(id);
     btn.disabled = true;
     try {

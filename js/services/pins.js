@@ -12,7 +12,11 @@ export async function loadPins(userId) {
 
 export async function setPin(userId, kind, targetId, pinned) {
   if (pinned) {
-    unwrap(await sb().from('pins').insert({ user_id: userId, kind, target_id: targetId }));
+    // Upsert with ignoreDuplicates: a repeat tap or stale state doesn't throw.
+    unwrap(await sb().from('pins').upsert(
+      { user_id: userId, kind, target_id: targetId },
+      { onConflict: 'user_id,kind,target_id', ignoreDuplicates: true },
+    ));
     state.pins[kind].add(targetId);
   } else {
     unwrap(await sb().from('pins').delete()

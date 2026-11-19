@@ -101,3 +101,24 @@ export async function getItem(id) {
     },
   };
 }
+
+// Meetings by id, soonest first. Used for the calendar and for pinned meetings.
+export async function listMeetingsByIds(ids) {
+  if (!ids.length) return [];
+  const rows = unwrap(await sb().from('meetings')
+    .select('*, bodies(name, level), items(id, title, stage)')
+    .in('id', ids)
+    .order('starts_at'));
+  return rows.map(toMeeting);
+}
+
+// Bodies by id. Used by screens that already know which bodies they need.
+export async function listBodiesByIds(ids) {
+  if (!ids.length) return [];
+  return unwrap(await sb().from('bodies').select('*').in('id', ids).order('name')).map(toBody);
+}
+
+// Bodies that belong to one place (the city, the county, a school area).
+export async function listBodiesForPlace(placeId) {
+  return unwrap(await sb().from('bodies').select('*').eq('place_id', placeId).order('name')).map(toBody);
+}

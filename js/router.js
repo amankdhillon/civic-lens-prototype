@@ -12,13 +12,21 @@ import * as place from './screens/place/index.js';
 import * as home from './screens/home/index.js';
 import * as body from './screens/body/index.js';
 import * as item from './screens/item/index.js';
+import * as check from './screens/check/index.js';
+import * as places from './screens/places/index.js';
+import * as calendar from './screens/calendar/index.js';
+import * as pinned from './screens/pinned/index.js';
 
 export const routes = [
   { path: '/welcome', need: 'none', screen: welcome },
+  { path: '/check', need: 'none', screen: check },
   { path: '/location', need: 'profile', screen: location },
   { path: '/', need: 'ready', screen: home },
   { path: '/body/:id', need: 'ready', screen: body },
+  { path: '/places', need: 'ready', screen: places },
   { path: '/place/:id', need: 'ready', screen: place },
+  { path: '/calendar', need: 'ready', screen: calendar },
+  { path: '/pinned', need: 'ready', screen: pinned },
   { path: '/item/:id', need: 'ready', screen: item },
 ];
 

@@ -13,7 +13,7 @@ alter table meetings drop constraint if exists meetings_status_check;
 alter table meetings add constraint meetings_status_check
   check (status in ('scheduled', 'in_progress', 'held', 'cancelled'));
 
--- Comments on an agenda item. Only residents of the item's body can post. Everyone can read.
+-- Comments on an agenda item. Only residents of the item's body can post. Signed-in people can read.
 create table if not exists item_comments (
   id uuid primary key default gen_random_uuid(),
   item_id text not null references items(id) on delete cascade,
