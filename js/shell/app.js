@@ -36,7 +36,7 @@ const mine=id=>!!state.addr&&Object.values(state.addr.d).includes(id);
 function boardInfo(k){
   const [type,id]=splitKey(k);
   if(type==='topic'){const t=TOPICS.find(x=>x.id===id);return{type,title:t?t.title:id,scope:'Citywide topic',sub:'A conversation on this topic across the city.'};}
-  if(type==='body'){const b=BODIES[id];return{type,title:b.name,scope:b.kind==='committee'?'Subcommittee':'Governing body',sub:b.about};}
+  if(type==='body'){const b=BODIES[id];return{type,title:b.name,scope:kindLabel(b),sub:b.about};}
   if(type==='group'){const b=BODIES[id];return{type,title:b.name,scope:'Community group',sub:b.about};}
   if(type==='place'){return{type,title:DIST[id].label+' board',scope:'Council district',sub:'Neighbors in this district talk about local decisions.'};}
   if(type==='meet'){const m=findMeeting(id);return{type,title:`${BODIES[m.body].name}, ${fmtDate(m.date)}`,scope:'Meeting discussion',sub:meetingSummary(m)};}
@@ -83,6 +83,7 @@ function viewSignin(){
     <div class="err" role="alert">${esc(state.error)}</div><div style="margin-top:6px"><button data-act="signin">Continue</button></div></div></div>`;
 }
 
+const kindLabel=b=>b.kind==='committee'?'Subcommittee':b.kind==='board'?'Board or commission':'Governing body';
 const ICON={
   feed:'<path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',
   pin:'<path d="M12 22s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="10" r="2.5"/>',
@@ -92,7 +93,7 @@ const ICON={
   chat:'<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/>',
 };
 const svgIcon=n=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[n]}</svg>`;
-const meetingSummary=m=>`${m.items.length} item${m.items.length===1?'':'s'} on the agenda: ${m.items.map(i=>i.title).join('; ')}.`;
+const meetingSummary=m=>m.items.length?`${m.items.length} item${m.items.length===1?'':'s'} on the agenda: ${m.items.map(i=>i.title).join('; ')}.`:'Agenda items have not been checked yet.';
 const parentMeeting=k=>{const [t,id]=splitKey(k);if(t==='meet')return findMeeting(id);if(t==='item'){const f=findItem(id);return f?f.m:null;}return null;};
 function backLink(k){
   const pm=parentMeeting(k);
@@ -167,9 +168,9 @@ function bodyRow(id,nested=false){
 }
 function viewBodies(){
   const levels=['Federal','State','County','City','School'];
-  const intro='<div class="card"><h1>Your bodies</h1><p class="muted">The governing bodies that represent you. Each one has meetings, agenda items, and a discussion board.</p></div>';
+  const intro='<div class="card"><h1>Your bodies</h1><p class="muted">The governing bodies that represent you. Each one has meetings, agenda items, and a discussion board.</p><p class="muted small">'+esc(DATA_NOTICE)+'</p></div>';
   return intro+levels.map(level=>{
-    const ids=Object.keys(BODIES).filter(b=>BODIES[b].level===level&&!BODIES[b].parent&&BODIES[b].kind!=='community');
+    const ids=Object.keys(BODIES).filter(b=>BODIES[b].level.toLowerCase()===level.toLowerCase()&&!BODIES[b].parent&&BODIES[b].kind!=='community');
     if(!ids.length) return '';
     return `<div class="card"><h2>${esc(level)}</h2>${ids.map(id=>bodyRow(id)+Object.keys(BODIES).filter(c=>BODIES[c].parent===id).map(c=>bodyRow(c,true)).join('')).join('')}</div>`;
   }).join('');
@@ -179,22 +180,32 @@ function viewBody(){
   const b=BODIES[state.bodyId];
   const subs=Object.keys(BODIES).filter(c=>BODIES[c].parent===state.bodyId);
   const ms=MEETINGS.filter(m=>m.body===state.bodyId||subs.includes(m.body));
-  const members=b.members.length?b.members.map(m=>`<div class="row"><div><b>${esc(DIST[m].rep)}</b><div class="muted small">${esc(DIST[m].label)}</div></div>${mine(m)?'<span class="tag ok">Your rep</span>':''}</div>`).join(''):'<p class="muted small">Members are set by the group.</p>';
+  const roster=b.roster&&b.roster.length
+    ? b.roster.map(r=>`<div class="row"><div><b>${esc(r.name)}</b><div class="muted small">${esc(r.role)}</div></div></div>`).join('')
+    : (b.members&&b.members.length
+        ? b.members.map(m=>`<div class="row"><div><b>${esc(DIST[m].rep)}</b><div class="muted small">${esc(DIST[m].label)}</div></div>${mine(m)?'<span class="tag ok">Your rep</span>':''}</div>`).join('')
+        : '<p class="muted small">Members are not listed on the checked page.</p>');
   const key='body:'+state.bodyId, fol=!!state.followed[key];
   const up=ms.filter(m=>!isPast(m)).sort(byAsc), prev=ms.filter(isPast).sort(byDesc);
+  const facts=[b.schedule&&`<b>Schedule:</b> ${esc(b.schedule)}`, b.where&&`<b>Where:</b> ${esc(b.where)}`, b.address&&`<b>Address:</b> ${esc(b.address)}`]
+    .filter(Boolean).map(x=>`<p class="small">${x}</p>`).join('');
+  const src=b.source
+    ? `<p class="muted small">Source: <a href="${esc(b.source)}" target="_blank" rel="noopener">official page</a>, checked ${esc(b.checked||'')}. Verify before relying on it.</p>`
+    : '<p class="muted small">Sample or not yet checked. Verify before relying on it.</p>';
   return `<div class="card"><button class="ghost" data-act="page" data-id="bodies" style="margin-bottom:10px">← Back to bodies</button>
     <h1>${esc(b.name)}</h1><p>${esc(b.about)}</p>
-    <span class="tag">${esc(b.kind==='committee'?'Subcommittee':'Governing body')}</span>
+    <span class="tag">${esc(kindLabel(b))}</span>
     ${inScope(key)?'<span class="tag ok">In your area</span>':''}
+    ${facts}
     <div class="bar" style="margin-top:10px">
       <button data-act="board" data-key="${esc(key)}">Open discussion board</button>
       <button class="ghost" data-act="follow" data-key="${esc(key)}" aria-pressed="${fol}">${fol?'Following':'Follow'}</button>
     </div>
-    <h2 style="margin-top:14px">Upcoming meetings</h2>${up.length?listMeetings(up):'<p class="muted">No upcoming meetings listed.</p>'}
-    <h2 style="margin-top:14px">Previous meetings</h2>${prev.length?listMeetings(prev):'<p class="muted">No previous meetings listed.</p>'}
-    <h2 style="margin-top:14px">Members</h2>${members}
+    <h2 style="margin-top:14px">Upcoming meetings</h2>${up.length?listMeetings(up):'<p class="muted">No upcoming meetings listed on the checked calendar.</p>'}
+    <h2 style="margin-top:14px">Previous meetings</h2>${prev.length?listMeetings(prev):'<p class="muted">No previous meetings listed on the checked calendar.</p>'}
+    <h2 style="margin-top:14px">Members</h2>${roster}
     ${subs.length?`<h2 style="margin-top:14px">Subcommittees</h2>${subs.map(s=>bodyRow(s)).join('')}`:''}
-    <p class="muted small">Sample data. Replace with official information before any public test.</p></div>`;
+    ${src}</div>`;
 }
 
 function viewMeetings(){
@@ -224,8 +235,9 @@ function viewMeeting(){
       <h1>${esc(BODIES[m.body].name)}</h1><div class="muted">${fmtDate(m.date)} · ${esc(m.time)} · ${esc(m.title)}</div>
       <div class="bar" style="margin:8px 0"><span class="tag ${past?'':'ok'}">${past?'Previous':'Upcoming'}</span>${state.calendar.includes(m.id)?'<span class="tag ok">On your calendar</span>':''}</div>
       <p>${esc(meetingSummary(m))}</p>
+      <p class="muted small">Source: <a href="${esc(m.source||'')}" target="_blank" rel="noopener">City Clerk meetings calendar</a>, checked ${esc(m.checked||'')}. Verify before relying on it.</p>
       <div class="bar">${addControls(m)}<button class="ghost" data-act="board" data-key="${esc(mk)}">Open meeting discussion (${ms.count})</button></div></div>
-    <div class="card"><h2>Agenda items</h2><p class="muted small">Each item has its own space for community review comments. Comments do not change the official record.</p>${items}</div>`;
+    <div class="card"><h2>Agenda items</h2><p class="muted small">Each item has its own space for community review comments. Comments do not change the official record.</p>${items||'<p class="muted">Agenda items have not been imported for this meeting yet.</p>'}</div>`;
 }
 function viewCalendar(){
   const ms=state.calendar.map(id=>findMeeting(id)).filter(Boolean).sort(byAsc);
@@ -317,7 +329,7 @@ function viewApp(){
         <span class="muted small">${esc(state.user)}${state.addr?' · '+esc(state.addr.full):''}</span>
         <button class="ghost" data-act="signout">Sign out</button></header>
       <main id="main" class="wrap">${pages[state.page]()}</main>
-      <footer>Prototype. Sample meetings, boards, and addresses. Officeholders and district numbers must be verified before any public test.${sub?'':''}</footer>
+      <footer>${esc(DATA_NOTICE)} Checked ${esc(DATA_CHECKED)}. Addresses, community groups, and discussions are sample data.</footer>
     </div></div>`;
 }
 function render(){
