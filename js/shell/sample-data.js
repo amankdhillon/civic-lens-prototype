@@ -29,5 +29,4 @@ const SEED_BOARDS={
   'body:bos':{threads:[T('t4','Question for the next supervisor meeting','question',[P('Renee B.','Will public comment time change for the December meeting?','2026-11-13')])]},
   'body:sdcc':{threads:[T('t5','Council meetings and public comment','opinion',[P('Dana K.','Shorter comment periods make it hard to speak. Who else has noticed?','2026-11-12')])]},
   'place:sdcc-3':{threads:[T('t6','Park cleanup Saturday, who is coming?','question',[P('Marcus T.','Meeting at the north entrance at 9. Bring gloves.','2026-11-15')])]},
-  'group:grp-d3':{threads:[T('t7','Speaker invitation for January','opinion',[P('Priya S.','I would like to invite a transit planner. Who can help organize?','2026-11-16')])]},
 };

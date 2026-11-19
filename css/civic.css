@@ -72,3 +72,8 @@ footer{padding:12px 16px;color:var(--mute);font-size:12px;text-align:center}
 .addbtn{min-width:44px;min-height:44px;padding:0 14px;font-size:22px;line-height:1;font-weight:700}
 .addmenu{display:flex;flex-wrap:wrap;gap:8px;padding:10px;border:1px solid var(--line);border-radius:10px;background:#f7f9fc}
 .addmenu button{min-height:44px}
+
+/* Collapsible districts on body pages */
+details.dist{border-top:1px solid var(--line);padding:4px 0}
+details.dist summary{cursor:pointer;min-height:44px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-weight:600}
+details.dist .dist-body{padding:4px 0 12px 22px}

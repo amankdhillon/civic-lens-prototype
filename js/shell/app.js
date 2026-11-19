@@ -1,5 +1,5 @@
-const TITLES={feed:'Feed',find:'Find my districts',bodies:'Bodies',body:'Body',meetings:'Meetings',calendar:'My calendar',meeting:'Meeting',boards:'Discussion boards',board:'Discussion board',thread:'Thread'};
-const NAV_ON={feed:'feed',find:'find',bodies:'bodies',body:'bodies',meetings:'meetings',meeting:'meetings',calendar:'calendar',boards:'boards',board:'boards',thread:'boards'};
+const TITLES={feed:'Feed',find:'Find my districts',bodies:'Bodies',body:'Body',meetings:'Meetings',calendar:'My calendar',meeting:'Meeting',boards:'Your discussion boards',allboards:'All discussion boards',board:'Discussion board',thread:'Thread'};
+const NAV_ON={feed:'feed',find:'find',bodies:'bodies',body:'bodies',meetings:'meetings',meeting:'meetings',calendar:'calendar',boards:'boards',allboards:'boards',board:'boards',thread:'boards'};
 
 const state={screen:'signin',user:'',error:'',addr:null,page:'feed',navOpen:true,toggles:{county:true,city:true,school:true,local:true},
   bodyId:null,meetingId:null,boardKey:null,threadId:null,query:'',boardQuery:'',drafts:{},followed:{},seq:100,
@@ -53,7 +53,7 @@ function allBoardKeys(){
     ...MEETINGS.flatMap(m=>m.items.map(i=>'item:'+i.id)),
     ...state.remote.threads.map(t=>(t.scope_kind==='meeting'?'meet':t.scope_kind)+':'+t.scope_id)
   ]);
-  return [...keys];
+  return [...keys].filter(knownKey);
 }
 function inScope(k){
   const [type,id]=splitKey(k);
@@ -83,6 +83,7 @@ function viewSignin(){
     <div class="err" role="alert">${esc(state.error)}</div><div style="margin-top:6px"><button data-act="signin">Continue</button></div></div></div>`;
 }
 
+const knownKey=k=>{const [t,id]=splitKey(k);if(t==='topic')return TOPICS.some(x=>x.id===id);if(t==='body')return !!BODIES[id];if(t==='place')return !!DIST[id];if(t==='meet')return !!findMeeting(id);return false;};
 const kindLabel=b=>b.kind==='committee'?'Subcommittee':b.kind==='board'?'Board or commission':'Governing body';
 const ICON={
   feed:'<path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',
@@ -98,7 +99,7 @@ const parentMeeting=k=>{const [t,id]=splitKey(k);if(t==='meet')return findMeetin
 function backLink(k){
   const pm=parentMeeting(k);
   return pm?`<button class="ghost" data-act="meeting" data-id="${pm.id}" style="margin-bottom:10px">← Back to meeting</button>`
-           :`<button class="ghost" data-act="page" data-id="boards" style="margin-bottom:10px">← All discussion boards</button>`;
+           :`<button class="ghost" data-act="page" data-id="boards" style="margin-bottom:10px">← Your boards</button>`;
 }
 // The + on each meeting: opens two choices. Calendar holds the meeting; discussion board follows its thread.
 function addControls(m){
@@ -125,7 +126,7 @@ function persist(){
 // Feed = what the person follows. Community groups are left out of the prototype feed.
 const bodyOfKey=k=>{const [t,id]=splitKey(k);if(t==='body')return id;if(t==='place'&&DIST[id])return DIST[id].body;if(t==='meet'){const m=findMeeting(id);return m?m.body:null;}if(t==='item'){const f=findItem(id);return f?f.m.body:null;}return null;};
 const isCommunityKey=k=>{const [t]=splitKey(k);if(t==='group')return true;const b=bodyOfKey(k);return !!b&&!!BODIES[b]&&BODIES[b].kind==='community';};
-const feedKeys=()=>Object.keys(state.followed).filter(k=>state.followed[k]&&!isCommunityKey(k));
+const feedKeys=()=>Object.keys(state.followed).filter(k=>state.followed[k]&&!isCommunityKey(k)&&knownKey(k));
 const followedBodyIds=()=>[...new Set(feedKeys().map(bodyOfKey).filter(b=>b&&BODIES[b]))];
 const feedMeetings=()=>{const ids=followedBodyIds();const direct=feedKeys().filter(k=>k.startsWith('meet:')).map(k=>splitKey(k)[1]);return MEETINGS.filter(m=>ids.includes(m.body)||direct.includes(m.id)||state.calendar.includes(m.id));};
 // Baseline follows for a new person: county board, city council, and their council district.
@@ -176,22 +177,34 @@ function viewBodies(){
   }).join('');
 }
 
+function districtSection(p){
+  const d=DIST[p], yours=mine(p), key='place:'+p;
+  const actions=yours
+    ? `<p class="small">Your district. You can post here.</p>
+       <div class="bar"><button data-act="board" data-key="${esc(key)}">Open district discussion</button>
+       <button class="ghost" data-act="follow" data-key="${esc(key)}" aria-pressed="${!!state.followed[key]}">${state.followed[key]?'Following':'Follow'}</button></div>`
+    : '<p class="muted small">View only. You can post only in your own districts.</p>';
+  return `<details class="dist" ${yours?'open':''}>
+    <summary><b>${esc(d.label)}</b><span class="muted"> · ${esc(d.rep)}</span>${yours?' <span class="tag ok">Your district</span>':''}</summary>
+    <div class="dist-body">${d.note?`<p class="small">${esc(d.note)}</p>`:''}${actions}</div></details>`;
+}
 function viewBody(){
   const b=BODIES[state.bodyId];
-  const subs=Object.keys(BODIES).filter(c=>BODIES[c].parent===state.bodyId);
-  const ms=MEETINGS.filter(m=>m.body===state.bodyId||subs.includes(m.body));
-  const roster=b.roster&&b.roster.length
-    ? b.roster.map(r=>`<div class="row"><div><b>${esc(r.name)}</b><div class="muted small">${esc(r.role)}</div></div></div>`).join('')
-    : (b.members&&b.members.length
-        ? b.members.map(m=>`<div class="row"><div><b>${esc(DIST[m].rep)}</b><div class="muted small">${esc(DIST[m].label)}</div></div>${mine(m)?'<span class="tag ok">Your rep</span>':''}</div>`).join('')
-        : '<p class="muted small">Members are not listed on the checked page.</p>');
+  const ms=MEETINGS.filter(m=>m.body===state.bodyId);
   const key='body:'+state.bodyId, fol=!!state.followed[key];
   const up=ms.filter(m=>!isPast(m)).sort(byAsc), prev=ms.filter(isPast).sort(byDesc);
+  const districts=Object.keys(DIST).filter(p=>DIST[p].body===state.bodyId);
+  const roster=b.roster&&b.roster.length
+    ? `<h2 style="margin-top:14px">Members</h2>`+b.roster.map(r=>`<div class="row"><div><b>${esc(r.name)}</b><div class="muted small">${esc(r.role)}</div></div></div>`).join('')
+    : '';
   const facts=[b.schedule&&`<b>Schedule:</b> ${esc(b.schedule)}`, b.where&&`<b>Where:</b> ${esc(b.where)}`, b.address&&`<b>Address:</b> ${esc(b.address)}`]
     .filter(Boolean).map(x=>`<p class="small">${x}</p>`).join('');
   const src=b.source
     ? `<p class="muted small">Source: <a href="${esc(b.source)}" target="_blank" rel="noopener">official page</a>, checked ${esc(b.checked||'')}. Verify before relying on it.</p>`
     : '<p class="muted small">Sample or not yet checked. Verify before relying on it.</p>';
+  const seats=districts.length
+    ? `<h2 style="margin-top:14px">Districts</h2><p class="muted small">Open each district to see its member. You can post only in your own district; the others are view only.</p>${districts.map(districtSection).join('')}`
+    : '';
   return `<div class="card"><button class="ghost" data-act="page" data-id="bodies" style="margin-bottom:10px">← Back to bodies</button>
     <h1>${esc(b.name)}</h1><p>${esc(b.about)}</p>
     <span class="tag">${esc(kindLabel(b))}</span>
@@ -201,10 +214,10 @@ function viewBody(){
       <button data-act="board" data-key="${esc(key)}">Open discussion board</button>
       <button class="ghost" data-act="follow" data-key="${esc(key)}" aria-pressed="${fol}">${fol?'Following':'Follow'}</button>
     </div>
+    ${seats}
     <h2 style="margin-top:14px">Upcoming meetings</h2>${up.length?listMeetings(up):'<p class="muted">No upcoming meetings listed on the checked calendar.</p>'}
     <h2 style="margin-top:14px">Previous meetings</h2>${prev.length?listMeetings(prev):'<p class="muted">No previous meetings listed on the checked calendar.</p>'}
-    <h2 style="margin-top:14px">Members</h2>${roster}
-    ${subs.length?`<h2 style="margin-top:14px">Subcommittees</h2>${subs.map(s=>bodyRow(s)).join('')}`:''}
+    ${roster}
     ${src}</div>`;
 }
 
@@ -250,14 +263,20 @@ function boardsHtml(){
   const order=['body','meet','topic','place'];
   const titles={body:'Bodies',meet:'Meetings',topic:'Citywide topics',place:'Your districts'};
   return order.map(type=>{
-    const keys=allBoardKeys().filter(k=>k.startsWith(type+':')).filter(k=>!q||boardInfo(k).title.toLowerCase().includes(q));
+    const keys=allBoardKeys().filter(k=>k.startsWith(type+':')).filter(k=>!k.startsWith('place:')||mine(splitKey(k)[1])).filter(k=>!q||boardInfo(k).title.toLowerCase().includes(q));
     if(!keys.length) return '';
     return `<div class="card"><h2>${esc(titles[type])}</h2>${keys.map(boardRow).join('')}</div>`;
   }).join('')||'<div class="card"><p class="muted">No boards match that search.</p></div>';
 }
 function viewBoards(){
-  return `<div class="card"><h1>Discussion boards</h1>
-      <p class="muted">Boards are where people talk. Each board holds threads. Start a thread to ask a question, share information with a source, or give an opinion.</p>
+  const keys=feedKeys().filter(k=>!k.startsWith('place:')||mine(splitKey(k)[1])).sort((a,b)=>boardStats(b).last.localeCompare(boardStats(a).last));
+  const list=keys.length?keys.map(boardRow).join(''):'<p class="muted">You are not following any boards yet. Follow a body, a meeting, or a topic and it appears here.</p>';
+  return `<div class="card"><h1>Your discussion boards</h1><p class="muted">The boards you follow, most recent activity first.</p>${list}
+    <div class="bar" style="margin-top:12px"><button class="ghost" data-act="page" data-id="allboards">See all boards</button></div></div>`;
+}
+function viewAllBoards(){
+  return `<div class="card"><button class="ghost" data-act="page" data-id="boards" style="margin-bottom:10px">← Your boards</button>
+      <h1>All discussion boards</h1><p class="muted">Boards are where people talk. Follow a board to see it on your boards page. You can post only in boards that cover your districts.</p>
       <label for="bq" class="small">Search boards</label>
       <input id="bq" value="${esc(state.boardQuery)}" placeholder="For example, streets or budget" autocomplete="off"></div>
     <div id="board-list">${boardsHtml()}</div>`;
@@ -320,7 +339,7 @@ function sidebarBody(){
 }
 
 function viewApp(){
-  const pages={feed:viewFeed,find:viewFind,bodies:viewBodies,body:viewBody,meetings:viewMeetings,calendar:viewCalendar,meeting:viewMeeting,boards:viewBoards,board:viewBoard,thread:viewThread};
+  const pages={feed:viewFeed,find:viewFind,bodies:viewBodies,body:viewBody,meetings:viewMeetings,calendar:viewCalendar,meeting:viewMeeting,boards:viewBoards,allboards:viewAllBoards,board:viewBoard,thread:viewThread};
   const sub=state.page==='board'||state.page==='thread'?(boardInfo(state.boardKey).title):'';
   return `<div class="shell ${state.navOpen?'':'closed'}">
     <aside class="side" aria-label="Main navigation">${sidebarBody()}</aside>
@@ -354,7 +373,7 @@ async function chooseAddress(id){
   Object.assign(state,{page:'feed',toggles:{county:true,city:true,school:true,local:true},meetingId:null,postError:''});
   state.followed=baselineFollows(state.addr);persist();
   const places=Object.values(state.addr.d);
-  const bodies=[...new Set(places.map(p=>DIST[p].body))];
+  const bodies=[...new Set(places.map(p=>DIST[p].body))].filter(Boolean);
   try{ localStorage.setItem('civic.addr',id); }catch(e){}
   if(state.me){ try{ await dbSaveLocation(state.me.id,places,bodies); }catch(e){ state.postError='Could not save your districts: '+e.message; } }
   render();

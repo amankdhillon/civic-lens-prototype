@@ -94,94 +94,72 @@ const DIST={
  "sdusd-a": {
   "label": "Board, Area A",
   "rep": "Sabrina Bazzo",
-  "body": "sdusd",
+  "body": null,
   "source": "https://www.sandiegounified.org/about/board_of_education",
   "note": "Board Vice President."
  },
  "sdusd-b": {
   "label": "Board, Area B",
   "rep": "Shana Hazan",
-  "body": "sdusd",
+  "body": null,
   "source": "https://www.sandiegounified.org/about/board_of_education"
  },
  "sdusd-c": {
   "label": "Board, Area C",
   "rep": "Cody Petterson",
-  "body": "sdusd",
+  "body": null,
   "source": "https://www.sandiegounified.org/about/board_of_education"
  },
  "sdusd-d": {
   "label": "Board, Area D",
   "rep": "Richard Barrera",
-  "body": "sdusd",
+  "body": null,
   "source": "https://www.sandiegounified.org/about/board_of_education",
   "note": "Board President."
  },
  "sdusd-e": {
   "label": "Board, Area E",
   "rep": "Sharon Whitehurst-Payne",
-  "body": "sdusd",
+  "body": null,
   "source": "https://www.sandiegounified.org/about/board_of_education"
  },
  "fed-sd": {
   "label": "U.S. House, San Diego County district",
   "rep": "Not checked yet",
-  "body": "fed",
+  "body": null,
   "source": "",
   "note": "Not checked. Add from an official source."
  },
  "state-sd": {
   "label": "State Senate, San Diego County district",
   "rep": "Not checked yet",
-  "body": "state",
+  "body": null,
   "source": "",
   "note": "Not checked. Add from an official source."
  },
  "grp-d3": {
   "label": "Neighborhood group, District 3",
   "rep": "Organized by residents (sample)",
-  "body": "grp-d3",
+  "body": null,
   "source": "",
   "sample": true
  },
  "grp-east": {
   "label": "Neighborhood group, Eastside",
   "rep": "Organized by residents (sample)",
-  "body": "grp-east",
+  "body": null,
   "source": "",
   "sample": true
  },
  "grp-coast": {
   "label": "Neighborhood group, Coastal",
   "rep": "Organized by residents (sample)",
-  "body": "grp-coast",
+  "body": null,
   "source": "",
   "sample": true
  }
 };
 const BODIES={
- "fed": {
-  "name": "U.S. House of Representatives",
-  "level": "federal",
-  "kind": "governing",
-  "about": "Not checked yet. Representatives for San Diego County are not in this data set.",
-  "source": "",
-  "checked": "2026-11-18",
-  "members": [
-   "fed-sd"
-  ]
- },
- "state": {
-  "name": "California State Senate",
-  "level": "state",
-  "kind": "governing",
-  "about": "Not checked yet. Senators for San Diego County are not in this data set.",
-  "source": "",
-  "checked": "2026-11-18",
-  "members": [
-   "state-sd"
-  ]
- },
  "bos": {
   "name": "Board of Supervisors, County of San Diego",
   "level": "county",
@@ -218,447 +196,9 @@ const BODIES={
    "sdcc-8",
    "sdcc-9"
   ]
- },
- "sdusd": {
-  "name": "San Diego Unified School District Board of Education",
-  "level": "school",
-  "kind": "governing",
-  "about": "Five trustees elected by area (A to E) to four-year terms.",
-  "schedule": "The checked page lists one upcoming Regular Meeting, Tuesday, December 1, 2026, at 5:00 p.m., livestreamed. No recurring schedule is stated.",
-  "source": "https://www.sandiegounified.org/about/board_of_education",
-  "checked": "2026-11-18",
-  "members": [
-   "sdusd-a",
-   "sdusd-b",
-   "sdusd-c",
-   "sdusd-d",
-   "sdusd-e"
-  ]
- },
- "cm-active-transport": {
-  "name": "Active Transportation and Infrastructure Committee",
-  "level": "city",
-  "kind": "committee",
-  "parent": "sdcc",
-  "about": "Standing council committee.",
-  "schedule": "One to two Thursdays per month at 1:00 p.m.",
-  "where": "City Council Committee Room, 12th Floor, City Administration Building",
-  "roster": [
-   {
-    "name": "Stephen Whitburn",
-    "role": "Chair"
-   },
-   {
-    "name": "Henry L. Foster III",
-    "role": "Vice Chair"
-   },
-   {
-    "name": "Kent Lee",
-    "role": "Member"
-   },
-   {
-    "name": "Marni von Wilpert",
-    "role": "Member"
-   }
-  ],
-  "source": "https://www.sandiego.gov/council-committees",
-  "checked": "2026-11-18"
- },
- "cm-audit": {
-  "name": "Audit Committee",
-  "level": "city",
-  "kind": "committee",
-  "parent": "sdcc",
-  "about": "Standing council committee.",
-  "schedule": "One to two Wednesdays per month at 9:00 a.m.",
-  "where": "City Council Committee Room, 12th Floor, City Administration Building",
-  "roster": [
-   {
-    "name": "Vivian Moreno",
-    "role": "Chair"
-   },
-   {
-    "name": "Henry L. Foster III",
-    "role": "Vice Chair"
-   },
-   {
-    "name": "Stewart Halpern",
-    "role": "Member"
-   },
-   {
-    "name": "Andy Maffia",
-    "role": "Member"
-   },
-   {
-    "name": "Toufic Tabshouri",
-    "role": "Member"
-   }
-  ],
-  "source": "https://www.sandiego.gov/council-committees",
-  "checked": "2026-11-18"
- },
- "cm-budget": {
-  "name": "Budget and Government Efficiency Committee",
-  "level": "city",
-  "kind": "committee",
-  "parent": "sdcc",
-  "about": "Standing council committee.",
-  "schedule": "One to two Wednesdays per month at 9:00 a.m.",
-  "where": "City Council Committee Room, 12th Floor, City Administration Building",
-  "roster": [
-   {
-    "name": "Henry L. Foster III",
-    "role": "Chair"
-   },
-   {
-    "name": "Vivian Moreno",
-    "role": "Vice Chair"
-   },
-   {
-    "name": "Kent Lee",
-    "role": "Member"
-   },
-   {
-    "name": "Sean Elo-Rivera",
-    "role": "Member"
-   }
-  ],
-  "source": "https://www.sandiego.gov/council-committees",
-  "checked": "2026-11-18"
- },
- "cm-community": {
-  "name": "Community and Neighborhood Services Committee",
-  "level": "city",
-  "kind": "committee",
-  "parent": "sdcc",
-  "about": "Standing council committee.",
-  "schedule": "One to two Wednesdays per month at 2:00 p.m.",
-  "where": "City Council Committee Room, 12th Floor, City Administration Building",
-  "roster": [
-   {
-    "name": "Jennifer Campbell",
-    "role": "Chair"
-   },
-   {
-    "name": "Marni von Wilpert",
-    "role": "Vice Chair"
-   },
-   {
-    "name": "Henry L. Foster III",
-    "role": "Member"
-   },
-   {
-    "name": "Raul Campillo",
-    "role": "Member"
-   }
-  ],
-  "source": "https://www.sandiego.gov/council-committees",
-  "checked": "2026-11-18"
- },
- "cm-econdev": {
-  "name": "Economic Development and Intergovernmental Relations Committee",
-  "level": "city",
-  "kind": "committee",
-  "parent": "sdcc",
-  "about": "Standing council committee.",
-  "schedule": "One to two Wednesdays per month at 2:00 p.m.",
-  "where": "City Council Committee Room, 12th Floor, City Administration Building",
-  "roster": [
-   {
-    "name": "Raul Campillo",
-    "role": "Chair"
-   },
-   {
-    "name": "Kent Lee",
-    "role": "Vice Chair"
-   },
-   {
-    "name": "Jennifer Campbell",
-    "role": "Member"
-   },
-   {
-    "name": "Henry L. Foster III",
-    "role": "Member"
-   }
-  ],
-  "source": "https://www.sandiego.gov/council-committees",
-  "checked": "2026-11-18"
- },
- "cm-environment": {
-  "name": "Environment Committee",
-  "level": "city",
-  "kind": "committee",
-  "parent": "sdcc",
-  "about": "Standing council committee.",
-  "schedule": "One to two Thursdays per month at 1:00 p.m.",
-  "where": "City Council Committee Room, 12th Floor, City Administration Building",
-  "roster": [
-   {
-    "name": "Sean Elo-Rivera",
-    "role": "Chair"
-   },
-   {
-    "name": "Jennifer Campbell",
-    "role": "Vice Chair"
-   },
-   {
-    "name": "Joe LaCava",
-    "role": "Member"
-   }
-  ],
-  "source": "https://www.sandiego.gov/council-committees",
-  "checked": "2026-11-18"
- },
- "cm-landuse": {
-  "name": "Land Use and Housing Committee",
-  "level": "city",
-  "kind": "committee",
-  "parent": "sdcc",
-  "about": "Standing council committee.",
-  "schedule": "One to two Thursdays per month at 1:00 p.m.",
-  "where": "City Council Committee Room, 12th Floor, City Administration Building",
-  "roster": [
-   {
-    "name": "Kent Lee",
-    "role": "Chair"
-   },
-   {
-    "name": "Sean Elo-Rivera",
-    "role": "Vice Chair"
-   },
-   {
-    "name": "Stephen Whitburn",
-    "role": "Member"
-   },
-   {
-    "name": "Vivian Moreno",
-    "role": "Member"
-   }
-  ],
-  "source": "https://www.sandiego.gov/council-committees",
-  "checked": "2026-11-18"
- },
- "cm-publicsafety": {
-  "name": "Public Safety Committee",
-  "level": "city",
-  "kind": "committee",
-  "parent": "sdcc",
-  "about": "Standing council committee.",
-  "schedule": "One to two Wednesdays per month at 2:00 p.m.",
-  "where": "City Council Committee Room, 12th Floor, City Administration Building",
-  "roster": [
-   {
-    "name": "Marni von Wilpert",
-    "role": "Chair"
-   },
-   {
-    "name": "Raul Campillo",
-    "role": "Vice Chair"
-   },
-   {
-    "name": "Jennifer Campbell",
-    "role": "Member"
-   },
-   {
-    "name": "Stephen Whitburn",
-    "role": "Member"
-   }
-  ],
-  "source": "https://www.sandiego.gov/council-committees",
-  "checked": "2026-11-18",
-  "note": "The council page also has a block for the Public Safety and Livable Neighborhoods Committee with a different member list and room. The two entries conflict. Verify before use."
- },
- "cm-rules": {
-  "name": "Rules Committee",
-  "level": "city",
-  "kind": "committee",
-  "parent": "sdcc",
-  "about": "Standing council committee.",
-  "schedule": "One to two Wednesdays per month at 9:00 a.m.",
-  "where": "City Council Committee Room, 12th Floor, City Administration Building",
-  "roster": [
-   {
-    "name": "Joe LaCava",
-    "role": "Chair"
-   },
-   {
-    "name": "Kent Lee",
-    "role": "Vice Chair"
-   },
-   {
-    "name": "Raul Campillo",
-    "role": "Member"
-   },
-   {
-    "name": "Vivian Moreno",
-    "role": "Member"
-   },
-   {
-    "name": "Sean Elo-Rivera",
-    "role": "Member"
-   }
-  ],
-  "source": "https://www.sandiego.gov/council-committees",
-  "checked": "2026-11-18"
- },
- "board-aab": {
-  "name": "Accessibility Advisory Board",
-  "level": "city",
-  "kind": "board",
-  "about": "Board or commission listed on the city's boards and commissions page.",
-  "schedule": "Typically meets monthly on the fourth Thursday from 2 to 3:30 p.m.",
-  "address": "1200 Third Ave., Suite 924, San Diego, 92101",
-  "source": "https://www.sandiego.gov/adacompliance/aab",
-  "checked": "2026-11-18"
- },
- "board-airports": {
-  "name": "Airports Advisory Committee",
-  "level": "city",
-  "kind": "board",
-  "about": "Board or commission listed on the city's boards and commissions page.",
-  "schedule": "Meets on the second Tuesday of each month at 3 p.m.",
-  "address": "3750 John J. Montgomery Drive, San Diego, 92123",
-  "source": "https://www.sandiego.gov/airports/aac/meetingdocs",
-  "checked": "2026-11-18"
- },
- "board-arts": {
-  "name": "Arts and Culture, Commission for",
-  "level": "city",
-  "kind": "board",
-  "about": "Board or commission listed on the city's boards and commissions page.",
-  "schedule": "Meets monthly on the fourth Thursday of the month from 1:30 to 3:30 p.m.",
-  "address": "1200 Third Ave., Suite 924, San Diego, 92101",
-  "source": "https://www.sandiego.gov/economic-development/cultural-affairs/meetings",
-  "checked": "2026-11-18"
- },
- "board-balboa": {
-  "name": "Balboa Park Committee",
-  "level": "city",
-  "kind": "board",
-  "about": "Board or commission listed on the city's boards and commissions page.",
-  "schedule": "Meets the first Thursday of the month beginning at 4 p.m.",
-  "address": "2150 Pan American Road, San Diego, CA 92101 (from the schedule text; the listing gives no separate address)",
-  "source": "https://www.sandiego.gov/park-and-recreation/general-info/boards/bpc",
-  "checked": "2026-11-18"
- },
- "board-building": {
-  "name": "Board of Building Appeals and Advisors",
-  "level": "city",
-  "kind": "board",
-  "about": "Board or commission listed on the city's boards and commissions page.",
-  "schedule": "Typically meets on the second Thursday of each month at 1 p.m.",
-  "address": "7650 Mission Valley Rd, San Diego, 92108",
-  "source": "https://www.sandiego.gov/development-services/board-building-appeals-and-advisors",
-  "checked": "2026-11-18"
- },
- "board-ceoc": {
-  "name": "Citizens Equal Opportunity Commission",
-  "level": "city",
-  "kind": "board",
-  "about": "Board or commission listed on the city's boards and commissions page.",
-  "schedule": "Meets monthly on the first Wednesday of each month.",
-  "address": "Not shown",
-  "source": "https://www.sandiego.gov/eoc/ceoc",
-  "checked": "2026-11-18"
- },
- "board-civilservice": {
-  "name": "Civil Service Commission",
-  "level": "city",
-  "kind": "board",
-  "about": "Board or commission listed on the city's boards and commissions page.",
-  "schedule": "Conducts regular business meetings generally on the first Thursday of each month.",
-  "address": "Not shown",
-  "source": "https://www.sandiego.gov/empopp/about/civilser",
-  "checked": "2026-11-18"
- },
- "board-climate": {
-  "name": "Climate Advisory Board",
-  "level": "city",
-  "kind": "board",
-  "about": "Board or commission listed on the city's boards and commissions page.",
-  "schedule": "Generally meets monthly but may vary at the discretion of the Chair.",
-  "address": "1200 Third Ave., 4th Floor, San Diego, 92101",
-  "source": "https://www.sandiego.gov/planning/public-hearings-meetings/climate-advisory-board",
-  "checked": "2026-11-18"
- },
- "board-cpp": {
-  "name": "Commission on Police Practices",
-  "level": "city",
-  "kind": "board",
-  "about": "Board or commission listed on the city's boards and commissions page.",
-  "schedule": "Hosts regular business meetings on the first Wednesday of the month from 5 to 8 p.m., in person.",
-  "address": "525 B Street, Suite 1725, San Diego, 92101",
-  "source": "https://www.sandiego.gov/cpp/meetingsagendas",
-  "checked": "2026-11-18"
- },
- "grp-d3": {
-  "name": "District 3 Neighborhood Council (sample)",
-  "level": "special",
-  "kind": "community",
-  "about": "Sample community group. Not a government body.",
-  "source": "",
-  "checked": "2026-11-18",
-  "sample": true,
-  "members": [
-   "grp-d3"
-  ]
- },
- "grp-east": {
-  "name": "Eastside Neighbors Coalition (sample)",
-  "level": "special",
-  "kind": "community",
-  "about": "Sample community group. Not a government body.",
-  "source": "",
-  "checked": "2026-11-18",
-  "sample": true,
-  "members": [
-   "grp-east"
-  ]
- },
- "grp-coast": {
-  "name": "Coastal Community Forum (sample)",
-  "level": "special",
-  "kind": "community",
-  "about": "Sample community group. Not a government body.",
-  "source": "",
-  "checked": "2026-11-18",
-  "sample": true,
-  "members": [
-   "grp-coast"
-  ]
- },
- "housing-auth": {
-  "name": "Housing Authority (as listed on the City Clerk calendar)",
-  "level": "city",
-  "kind": "board",
-  "about": "Listed on the City Clerk calendar. Its place in the city structure is not checked.",
-  "schedule": "",
-  "address": "",
-  "source": "https://www.sandiego.gov/city-clerk/officialdocs/meetings-calendar",
-  "checked": "2026-11-18"
  }
 };
 const MEETINGS=[
- {
-  "id": "cal-2026-11-05-edir",
-  "body": "cm-econdev",
-  "date": "2026-11-05",
-  "time": "9:00 a.m.",
-  "title": "Economic Development and Intergovernmental Relations Committee",
-  "items": [],
-  "source": "https://www.sandiego.gov/city-clerk/officialdocs/meetings-calendar",
-  "checked": "2026-11-18"
- },
- {
-  "id": "cal-2026-11-05-landuse-adj",
-  "body": "cm-landuse",
-  "date": "2026-11-05",
-  "time": "1:00 p.m.",
-  "title": "Adjourned Land Use & Housing Committee",
-  "items": [],
-  "source": "https://www.sandiego.gov/city-clerk/officialdocs/meetings-calendar",
-  "checked": "2026-11-18"
- },
  {
   "id": "cal-2026-11-09-council-am",
   "body": "sdcc",
@@ -680,16 +220,6 @@ const MEETINGS=[
   "checked": "2026-11-18"
  },
  {
-  "id": "cal-2026-11-10-housing",
-  "body": "housing-auth",
-  "date": "2026-11-10",
-  "time": "2:00 p.m.",
-  "title": "Housing Authority",
-  "items": [],
-  "source": "https://www.sandiego.gov/city-clerk/officialdocs/meetings-calendar",
-  "checked": "2026-11-18"
- },
- {
   "id": "cal-2026-11-10-council-am",
   "body": "sdcc",
   "date": "2026-11-10",
@@ -705,26 +235,6 @@ const MEETINGS=[
   "date": "2026-11-10",
   "time": "2:00 p.m.",
   "title": "City Council",
-  "items": [],
-  "source": "https://www.sandiego.gov/city-clerk/officialdocs/meetings-calendar",
-  "checked": "2026-11-18"
- },
- {
-  "id": "cal-2026-11-12-audit",
-  "body": "cm-audit",
-  "date": "2026-11-12",
-  "time": "9:00 a.m.",
-  "title": "Audit Committee",
-  "items": [],
-  "source": "https://www.sandiego.gov/city-clerk/officialdocs/meetings-calendar",
-  "checked": "2026-11-18"
- },
- {
-  "id": "cal-2026-11-12-environment",
-  "body": "cm-environment",
-  "date": "2026-11-12",
-  "time": "1:00 p.m.",
-  "title": "Environment Committee",
   "items": [],
   "source": "https://www.sandiego.gov/city-clerk/officialdocs/meetings-calendar",
   "checked": "2026-11-18"
@@ -765,56 +275,6 @@ const MEETINGS=[
   "date": "2026-11-17",
   "time": "2:00 p.m.",
   "title": "City Council",
-  "items": [],
-  "source": "https://www.sandiego.gov/city-clerk/officialdocs/meetings-calendar",
-  "checked": "2026-11-18"
- },
- {
-  "id": "cal-2026-11-18-budget",
-  "body": "cm-budget",
-  "date": "2026-11-18",
-  "time": "9:00 a.m.",
-  "title": "Budget & Government Efficiency Committee",
-  "items": [],
-  "source": "https://www.sandiego.gov/city-clerk/officialdocs/meetings-calendar",
-  "checked": "2026-11-18"
- },
- {
-  "id": "cal-2026-11-18-publicsafety",
-  "body": "cm-publicsafety",
-  "date": "2026-11-18",
-  "time": "2:00 p.m.",
-  "title": "Public Safety Committee",
-  "items": [],
-  "source": "https://www.sandiego.gov/city-clerk/officialdocs/meetings-calendar",
-  "checked": "2026-11-18"
- },
- {
-  "id": "cal-2026-11-19-ati",
-  "body": "cm-active-transport",
-  "date": "2026-11-19",
-  "time": "1:00 p.m.",
-  "title": "Active Transportation and Infrastructure Committee",
-  "items": [],
-  "source": "https://www.sandiego.gov/city-clerk/officialdocs/meetings-calendar",
-  "checked": "2026-11-18"
- },
- {
-  "id": "cal-2026-11-20-landuse",
-  "body": "cm-landuse",
-  "date": "2026-11-20",
-  "time": "9:00 a.m.",
-  "title": "Special Land Use & Housing Committee",
-  "items": [],
-  "source": "https://www.sandiego.gov/city-clerk/officialdocs/meetings-calendar",
-  "checked": "2026-11-18"
- },
- {
-  "id": "cal-2026-12-01-sdusd",
-  "body": "sdusd",
-  "date": "2026-12-01",
-  "time": "5:00 p.m.",
-  "title": "Board of Education Regular Meeting (livestreamed)",
   "items": [],
   "source": "https://www.sandiego.gov/city-clerk/officialdocs/meetings-calendar",
   "checked": "2026-11-18"

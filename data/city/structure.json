@@ -166,7 +166,8 @@
       "kind": "governing",
       "about": "Not checked yet. Representatives for San Diego County are not in this data set.",
       "source": "",
-      "checked": "2026-11-18"
+      "checked": "2026-11-18",
+      "prototype": false
     },
     "state": {
       "name": "California State Senate",
@@ -174,7 +175,8 @@
       "kind": "governing",
       "about": "Not checked yet. Senators for San Diego County are not in this data set.",
       "source": "",
-      "checked": "2026-11-18"
+      "checked": "2026-11-18",
+      "prototype": false
     },
     "bos": {
       "name": "Board of Supervisors, County of San Diego",
@@ -183,7 +185,8 @@
       "about": "Five elected supervisors, one for each supervisorial district.",
       "schedule": "Not stated on the checked page. The page links to its Board Meetings pages.",
       "source": "https://www.sandiegocounty.gov/content/sdc/general/bos.html",
-      "checked": "2026-11-18"
+      "checked": "2026-11-18",
+      "prototype": true
     },
     "sdcc": {
       "name": "San Diego City Council",
@@ -193,7 +196,8 @@
       "schedule": "Meets on Mondays and Tuesdays, usually at 10:00 a.m. and 2:00 p.m. Monday sessions include a 10:00 a.m. closed session (City Clerk calendar).",
       "where": "City Council Chambers, 12th Floor, City Administration Building",
       "source": "https://www.sandiego.gov/citycouncil",
-      "checked": "2026-11-18"
+      "checked": "2026-11-18",
+      "prototype": true
     },
     "sdusd": {
       "name": "San Diego Unified School District Board of Education",
@@ -202,7 +206,8 @@
       "about": "Five trustees elected by area (A to E) to four-year terms.",
       "schedule": "The checked page lists one upcoming Regular Meeting, Tuesday, December 1, 2026, at 5:00 p.m., livestreamed. No recurring schedule is stated.",
       "source": "https://www.sandiegounified.org/about/board_of_education",
-      "checked": "2026-11-18"
+      "checked": "2026-11-18",
+      "prototype": false
     },
     "cm-active-transport": {
       "name": "Active Transportation and Infrastructure Committee",
@@ -231,7 +236,8 @@
         }
       ],
       "source": "https://www.sandiego.gov/council-committees",
-      "checked": "2026-11-18"
+      "checked": "2026-11-18",
+      "prototype": false
     },
     "cm-audit": {
       "name": "Audit Committee",
@@ -264,7 +270,8 @@
         }
       ],
       "source": "https://www.sandiego.gov/council-committees",
-      "checked": "2026-11-18"
+      "checked": "2026-11-18",
+      "prototype": false
     },
     "cm-budget": {
       "name": "Budget and Government Efficiency Committee",
@@ -293,7 +300,8 @@
         }
       ],
       "source": "https://www.sandiego.gov/council-committees",
-      "checked": "2026-11-18"
+      "checked": "2026-11-18",
+      "prototype": false
     },
     "cm-community": {
       "name": "Community and Neighborhood Services Committee",
@@ -322,7 +330,8 @@
         }
       ],
       "source": "https://www.sandiego.gov/council-committees",
-      "checked": "2026-11-18"
+      "checked": "2026-11-18",
+      "prototype": false
     },
     "cm-econdev": {
       "name": "Economic Development and Intergovernmental Relations Committee",
@@ -351,7 +360,8 @@
         }
       ],
       "source": "https://www.sandiego.gov/council-committees",
-      "checked": "2026-11-18"
+      "checked": "2026-11-18",
+      "prototype": false
     },
     "cm-environment": {
       "name": "Environment Committee",
@@ -376,7 +386,8 @@
         }
       ],
       "source": "https://www.sandiego.gov/council-committees",
-      "checked": "2026-11-18"
+      "checked": "2026-11-18",
+      "prototype": false
     },
     "cm-landuse": {
       "name": "Land Use and Housing Committee",
@@ -405,7 +416,8 @@
         }
       ],
       "source": "https://www.sandiego.gov/council-committees",
-      "checked": "2026-11-18"
+      "checked": "2026-11-18",
+      "prototype": false
     },
     "cm-publicsafety": {
       "name": "Public Safety Committee",
@@ -435,7 +447,8 @@
       ],
       "source": "https://www.sandiego.gov/council-committees",
       "checked": "2026-11-18",
-      "note": "The council page also has a block for the Public Safety and Livable Neighborhoods Committee with a different member list and room. The two entries conflict. Verify before use."
+      "note": "The council page also has a block for the Public Safety and Livable Neighborhoods Committee with a different member list and room. The two entries conflict. Verify before use.",
+      "prototype": false
     },
     "cm-rules": {
       "name": "Rules Committee",
@@ -468,7 +481,8 @@
         }
       ],
       "source": "https://www.sandiego.gov/council-committees",
-      "checked": "2026-11-18"
+      "checked": "2026-11-18",
+      "prototype": false
     },
     "board-aab": {
       "name": "Accessibility Advisory Board",
@@ -478,7 +492,8 @@
       "schedule": "Typically meets monthly on the fourth Thursday from 2 to 3:30 p.m.",
       "address": "1200 Third Ave., Suite 924, San Diego, 92101",
       "source": "https://www.sandiego.gov/adacompliance/aab",
-      "checked": "2026-11-18"
+      "checked": "2026-11-18",
+      "prototype": false
     },
     "board-airports": {
       "name": "Airports Advisory Committee",
@@ -488,7 +503,8 @@
       "schedule": "Meets on the second Tuesday of each month at 3 p.m.",
       "address": "3750 John J. Montgomery Drive, San Diego, 92123",
       "source": "https://www.sandiego.gov/airports/aac/meetingdocs",
-      "checked": "2026-11-18"
+      "checked": "2026-11-18",
+      "prototype": false
     },
     "board-arts": {
       "name": "Arts and Culture, Commission for",
@@ -498,7 +514,8 @@
       "schedule": "Meets monthly on the fourth Thursday of the month from 1:30 to 3:30 p.m.",
       "address": "1200 Third Ave., Suite 924, San Diego, 92101",
       "source": "https://www.sandiego.gov/economic-development/cultural-affairs/meetings",
-      "checked": "2026-11-18"
+      "checked": "2026-11-18",
+      "prototype": false
     },
     "board-balboa": {
       "name": "Balboa Park Committee",
@@ -508,7 +525,8 @@
       "schedule": "Meets the first Thursday of the month beginning at 4 p.m.",
       "address": "2150 Pan American Road, San Diego, CA 92101 (from the schedule text; the listing gives no separate address)",
       "source": "https://www.sandiego.gov/park-and-recreation/general-info/boards/bpc",
-      "checked": "2026-11-18"
+      "checked": "2026-11-18",
+      "prototype": false
     },
     "board-building": {
       "name": "Board of Building Appeals and Advisors",
@@ -518,7 +536,8 @@
       "schedule": "Typically meets on the second Thursday of each month at 1 p.m.",
       "address": "7650 Mission Valley Rd, San Diego, 92108",
       "source": "https://www.sandiego.gov/development-services/board-building-appeals-and-advisors",
-      "checked": "2026-11-18"
+      "checked": "2026-11-18",
+      "prototype": false
     },
     "board-ceoc": {
       "name": "Citizens Equal Opportunity Commission",
@@ -528,7 +547,8 @@
       "schedule": "Meets monthly on the first Wednesday of each month.",
       "address": "Not shown",
       "source": "https://www.sandiego.gov/eoc/ceoc",
-      "checked": "2026-11-18"
+      "checked": "2026-11-18",
+      "prototype": false
     },
     "board-civilservice": {
       "name": "Civil Service Commission",
@@ -538,7 +558,8 @@
       "schedule": "Conducts regular business meetings generally on the first Thursday of each month.",
       "address": "Not shown",
       "source": "https://www.sandiego.gov/empopp/about/civilser",
-      "checked": "2026-11-18"
+      "checked": "2026-11-18",
+      "prototype": false
     },
     "board-climate": {
       "name": "Climate Advisory Board",
@@ -548,7 +569,8 @@
       "schedule": "Generally meets monthly but may vary at the discretion of the Chair.",
       "address": "1200 Third Ave., 4th Floor, San Diego, 92101",
       "source": "https://www.sandiego.gov/planning/public-hearings-meetings/climate-advisory-board",
-      "checked": "2026-11-18"
+      "checked": "2026-11-18",
+      "prototype": false
     },
     "board-cpp": {
       "name": "Commission on Police Practices",
@@ -558,7 +580,8 @@
       "schedule": "Hosts regular business meetings on the first Wednesday of the month from 5 to 8 p.m., in person.",
       "address": "525 B Street, Suite 1725, San Diego, 92101",
       "source": "https://www.sandiego.gov/cpp/meetingsagendas",
-      "checked": "2026-11-18"
+      "checked": "2026-11-18",
+      "prototype": false
     },
     "grp-d3": {
       "name": "District 3 Neighborhood Council (sample)",
@@ -567,7 +590,8 @@
       "about": "Sample community group. Not a government body.",
       "source": "",
       "checked": "2026-11-18",
-      "sample": true
+      "sample": true,
+      "prototype": false
     },
     "grp-east": {
       "name": "Eastside Neighbors Coalition (sample)",
@@ -576,7 +600,8 @@
       "about": "Sample community group. Not a government body.",
       "source": "",
       "checked": "2026-11-18",
-      "sample": true
+      "sample": true,
+      "prototype": false
     },
     "grp-coast": {
       "name": "Coastal Community Forum (sample)",
@@ -585,7 +610,8 @@
       "about": "Sample community group. Not a government body.",
       "source": "",
       "checked": "2026-11-18",
-      "sample": true
+      "sample": true,
+      "prototype": false
     },
     "housing-auth": {
       "name": "Housing Authority (as listed on the City Clerk calendar)",
@@ -595,7 +621,8 @@
       "schedule": "",
       "address": "",
       "source": "https://www.sandiego.gov/city-clerk/officialdocs/meetings-calendar",
-      "checked": "2026-11-18"
+      "checked": "2026-11-18",
+      "prototype": false
     }
   },
   "meetings": [
