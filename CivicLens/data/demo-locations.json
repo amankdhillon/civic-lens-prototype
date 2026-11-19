@@ -1,8 +1,0 @@
-{
-  "note": "Sample locations for the barebones prototype. They are not real addresses. Replace with address lookup once boundaries are loaded.",
-  "pins": [
-    { "id": "pin-a", "label": "Sample location A", "detail": "City Council District 1", "places": ["county-sd", "city-sd", "cd1", "sdusd"] },
-    { "id": "pin-b", "label": "Sample location B", "detail": "City Council District 3", "places": ["county-sd", "city-sd", "cd3", "sdusd"] },
-    { "id": "pin-c", "label": "Sample location C", "detail": "City Council District 7", "places": ["county-sd", "city-sd", "cd7", "sdusd"] }
-  ]
-}
