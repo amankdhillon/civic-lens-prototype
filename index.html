@@ -25,7 +25,10 @@
     </div>
   </header>
   <p class="banner">Sample data only. Bodies, meetings, and decisions are placeholders.</p>
-  <main id="app" class="container" tabindex="-1"></main>
+  <div class="shell">
+    <nav id="rail" class="rail" aria-label="Main"></nav>
+    <main id="app" class="app-main" tabindex="-1"></main>
+  </div>
   <p id="status" class="sr-only" role="status" aria-live="polite"></p>
   <div id="toasts" class="toasts"></div>
   <div id="modal" class="modal" hidden></div>

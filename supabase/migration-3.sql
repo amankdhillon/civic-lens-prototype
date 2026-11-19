@@ -54,4 +54,4 @@ grant select on places, officials to authenticated;
 revoke all on places, officials from anon;
 
 -- Users set their places along with their bodies.
-grant update (nickname, icon, body_ids, place_ids) on profiles to authenticated;
+grant update (nickname, body_ids, place_ids) on profiles to authenticated;

@@ -6,6 +6,7 @@ import { go } from './lib/nav.js';
 import { esc } from './lib/dom.js';
 import { SUPABASE_URL } from './config.js';
 import { startRouter } from './router.js';
+import { renderRail } from './components/rail.js';
 
 const app = document.getElementById('app');
 const corner = document.getElementById('me');
@@ -30,7 +31,7 @@ corner.addEventListener('click', async e => {
   }
 });
 
-window.addEventListener('hashchange', paintCorner);
+window.addEventListener('hashchange', () => { paintCorner(); renderRail(); });
 
 async function boot() {
   if (!location.hash) history.replaceState(null, '', '#/');
@@ -45,6 +46,7 @@ async function boot() {
     }
   }
   paintCorner();
+  renderRail();
   startRouter(app);
 }
 

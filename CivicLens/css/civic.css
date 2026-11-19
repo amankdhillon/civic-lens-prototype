@@ -1,0 +1,55 @@
+/* Civic Lens screens. Shared components (cards, buttons, fields, tags) come from components.css. */
+.screen { display: flex; flex-direction: column; gap: var(--space-5); }
+.stack { display: flex; flex-direction: column; gap: var(--space-3); }
+.plain { list-style: none; padding: 0; margin: 0; }
+.muted { color: var(--muted); }
+.lead { max-width: 60ch; }
+
+/* Home and body lists: each row is one large tap target */
+.body-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: var(--space-2); }
+.body-row {
+  display: grid; grid-template-columns: 1fr; gap: 2px; padding: var(--space-3) var(--space-4);
+  min-height: 44px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+  color: var(--ink); text-decoration: none;
+}
+.body-row:hover { border-color: var(--brand); }
+.body-row__level { font-size: 0.85rem; color: var(--muted); }
+.body-row__name { font-weight: 600; }
+.body-row__next { font-size: 0.95rem; color: var(--ink-2); }
+.live-line { margin: 0; padding: var(--space-3) var(--space-4); border-left: 4px solid var(--brand); background: var(--surface); }
+
+.links { margin: 0; display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-3); }
+.meeting h3 { margin: 0; font-size: 1.05rem; }
+.item-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: var(--space-2); }
+.item-list li { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+.item-list a { min-height: 44px; display: inline-flex; align-items: center; }
+
+/* Item screen */
+.item h1 { margin: 0; }
+.path { margin: 0; color: var(--ink-2); font-size: 0.95rem; }
+.how-to { border: 1px solid var(--line); border-radius: var(--radius-sm); padding: var(--space-3) var(--space-4); }
+.how-to summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; font-weight: 600; }
+.how-to .template {
+  white-space: pre-wrap; background: var(--surface-2); border: 1px solid var(--line);
+  border-radius: var(--radius-sm); padding: var(--space-3); font: inherit; font-size: 0.9rem; margin: var(--space-2) 0;
+}
+
+/* Discussion */
+.discussion { border-top: 1px solid var(--line); padding-top: var(--space-5); }
+.discussion h2 { margin: 0; }
+.comments { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: var(--space-3); }
+.comment { border-left: 3px solid var(--line); padding-left: var(--space-3); }
+.comment__body { margin: var(--space-1) 0; white-space: pre-wrap; }
+.composer { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: var(--space-4); display: flex; flex-direction: column; gap: var(--space-3); }
+
+/* Account corner */
+.me__name { font-weight: 600; }
+
+@media (max-width: 640px) {
+  .screen { gap: var(--space-4); }
+}
+
+/* Location step: sample pins and optional boards */
+.pin { display: flex; align-items: flex-start; gap: var(--space-2); min-height: 44px; padding: var(--space-2) 0; }
+.pin input { margin-top: 4px; width: 18px; height: 18px; accent-color: var(--brand); }
+.pin span { line-height: 1.4; }
