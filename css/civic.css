@@ -55,3 +55,20 @@ footer{padding:12px 16px;color:var(--mute);font-size:12px;text-align:center}
   .shell.closed .side{display:none}
   .nested{padding-left:12px}
 }
+
+/* Navigation: icon and label, grouped under headings, clear active state */
+.navgroup{margin-top:14px}
+.navhead{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--mute);margin:0 10px 4px}
+.navbtn{display:flex;align-items:center;gap:10px;font-size:16px;font-weight:500;min-height:44px;padding:8px 10px}
+.navbtn svg{flex:none;width:20px;height:20px}
+.navbtn.on{background:#e6edfc;color:var(--blue);font-weight:700;box-shadow:inset 4px 0 0 var(--blue)}
+.brand{font-size:19px}
+
+/* Meeting rows, the + menu, and agenda items */
+.mrow{display:flex;flex-direction:column;gap:8px;padding:12px 0;border-top:1px solid var(--line)}
+.mrow:first-of-type{border-top:0}
+.mrow .bar{justify-content:space-between;align-items:flex-start}
+.addwrap{display:flex;flex-direction:column;align-items:flex-start;gap:8px}
+.addbtn{min-width:44px;min-height:44px;padding:0 14px;font-size:22px;line-height:1;font-weight:700}
+.addmenu{display:flex;flex-wrap:wrap;gap:8px;padding:10px;border:1px solid var(--line);border-radius:10px;background:#f7f9fc}
+.addmenu button{min-height:44px}
