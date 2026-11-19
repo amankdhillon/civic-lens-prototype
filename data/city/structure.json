@@ -616,14 +616,16 @@
           "title": "Hillcrest mixed-use project, development permit review",
           "action": "Advisory",
           "summary": "Reviews building height, parking, and street-level design for a six-story mixed-use proposal.",
-          "result": "Recommended with conditions"
+          "result": "Recommended with conditions",
+          "why": "Shapes how a large building fits into the neighborhood."
         },
         {
           "id": "it-1105-2",
           "title": "Bylaws update",
           "action": "Advisory",
           "summary": "Updates meeting notice rules and officer terms.",
-          "result": "Adopted"
+          "result": "Adopted",
+          "why": "Sets how the group runs its meetings and elects officers."
         }
       ]
     },
@@ -655,14 +657,16 @@
           "title": "Street repaving contract amendment, Districts 3 and 6",
           "action": "Final decision",
           "summary": "Adds $4.2 million to the existing arterial paving contract for Districts 3 and 6.",
-          "result": "Adopted, 9-0"
+          "result": "Adopted, 9-0",
+          "why": "Repaving decides which blocks are next and when crews arrive."
         },
         {
           "id": "it-1109-2",
           "title": "Weekend construction hours, noise ordinance update",
           "action": "Final decision",
           "summary": "Sets a Saturday construction window that starts at 8 a.m. and adds a 48-hour permit notice.",
-          "result": "Adopted, 7-2"
+          "result": "Adopted, 7-2",
+          "why": "Sets when construction can start on Saturdays near homes."
         }
       ]
     },
@@ -678,7 +682,8 @@
           "title": "Balboa Park north entrance: trail and lighting funding",
           "action": "Final decision",
           "summary": "Allocates $650,000 for trail repairs and lighting at the north entrance.",
-          "result": "Approved, 9-0"
+          "result": "Approved, 9-0",
+          "why": "Decides trail and lighting work at a park many residents use."
         }
       ]
     },
@@ -702,14 +707,16 @@
           "title": "Budget amendment: move reserves to road and sidewalk repair",
           "action": "Final decision",
           "summary": "Moves $18 million from reserves to road and sidewalk repair. The staff summary is linked from the item page.",
-          "result": "Adopted, 6-3"
+          "result": "Adopted, 6-3",
+          "why": "Moves reserve money that also backs other city services."
         },
         {
           "id": "it-1110-3",
           "title": "Short-term rental permit enforcement update",
           "action": "Advisory",
           "summary": "Informational report on complaints, inspections, and permit revocations citywide.",
-          "result": "Received"
+          "result": "Received",
+          "why": "Shows how short-term rental complaints are being handled."
         }
       ]
     },
@@ -727,14 +734,16 @@
           "title": "Behavioral health beds, North County campus",
           "action": "Final decision",
           "summary": "Approves operating funds for 40 short-term behavioral health beds.",
-          "result": "Approved, 5-0"
+          "result": "Approved, 5-0",
+          "why": "Adds short-term behavioral health care beds in North County."
         },
         {
           "id": "it-1110b-2",
           "title": "Library hours restored at rural branches",
           "action": "Final decision",
           "summary": "Restores weekend hours at six rural branch libraries.",
-          "result": "Approved, 4-1"
+          "result": "Approved, 4-1",
+          "why": "Changes when rural libraries are open on weekends."
         }
       ]
     },
@@ -774,7 +783,8 @@
           "title": "Council public comment rules",
           "action": "Final decision",
           "summary": "Proposes changing general public comment from three minutes to two, and scheduled items from two minutes to three.",
-          "result": "Continued to Dec 1"
+          "result": "Continued to Dec 1",
+          "why": "Sets how long residents have to speak at council meetings."
         }
       ]
     },
@@ -790,7 +800,8 @@
           "title": "Affordable housing fee waiver, 5th Avenue project",
           "action": "Final decision",
           "summary": "Waives certain impact fees for 84 affordable units.",
-          "result": "Approved, 7-2"
+          "result": "Approved, 7-2",
+          "why": "Affects fees for new affordable housing in the city."
         }
       ]
     },
@@ -806,14 +817,16 @@
           "title": "Annual stormwater permit report",
           "action": "Advisory",
           "summary": "Staff reports on runoff inspections and on sites with repeated violations, with a map by council district.",
-          "result": "Received and filed"
+          "result": "Received and filed",
+          "why": "Shows which sites have repeated runoff violations."
         },
         {
           "id": "it-1117-3",
           "title": "Park cleanup volunteer program",
           "action": "Advisory",
           "summary": "Summarizes volunteer hours and proposes a neighborhood cleanup grant.",
-          "result": "Received"
+          "result": "Received",
+          "why": "Pays for volunteer cleanup projects in neighborhoods."
         }
       ]
     },
@@ -831,14 +844,16 @@
           "title": "Winter shelter capacity contract, 2026-27 season",
           "action": "Final decision",
           "summary": "Adds 600 winter shelter beds across county-contracted sites.",
-          "result": "Approved, 5-0"
+          "result": "Approved, 5-0",
+          "why": "Adds winter beds for people without shelter this season."
         },
         {
           "id": "it-1117b-2",
           "title": "Regional parks and trails maintenance report",
           "action": "Advisory",
           "summary": "Annual maintenance backlog report with a list of trails scheduled for repair.",
-          "result": "Received"
+          "result": "Received",
+          "why": "Shows which trails are scheduled for repair."
         }
       ]
     },
@@ -879,19 +894,22 @@
           "id": "it-1119-1",
           "title": "Park Boulevard corridor plan: presentation",
           "action": "Advisory",
-          "summary": "City staff presents the corridor plan for bike lanes, crossings, and parking changes, and asks for comments."
+          "summary": "City staff presents the corridor plan for bike lanes, crossings, and parking changes, and asks for comments.",
+          "why": "Would change bike lanes, crossings, and parking on Park Boulevard."
         },
         {
           "id": "it-1119-2",
           "title": "Short-term rental complaints report",
           "action": "Advisory",
-          "summary": "Code enforcement report on complaints in the planning area over the last quarter."
+          "summary": "Code enforcement report on complaints in the planning area over the last quarter.",
+          "why": "Shows how complaints about rentals are handled locally."
         },
         {
           "id": "it-1119-3",
           "title": "Officer elections",
           "action": "Advisory",
-          "summary": "Election of chair and vice chair for the coming year."
+          "summary": "Election of chair and vice chair for the coming year.",
+          "why": "Chooses who leads the group next year."
         }
       ]
     },
@@ -926,19 +944,22 @@
           "id": "it-1201-1",
           "title": "Council public comment rules (continued from Nov 16)",
           "action": "Final decision",
-          "summary": "Second reading of the speaking time rules. Staff proposes two minutes for general comment and three minutes for scheduled items."
+          "summary": "Second reading of the speaking time rules. Staff proposes two minutes for general comment and three minutes for scheduled items.",
+          "why": "Final step on how residents speak at council meetings."
         },
         {
           "id": "it-1201-2",
           "title": "Traffic calming, 30th Street between Upas and University",
           "action": "Final decision",
-          "summary": "Approves the design and $1.1 million for speed humps, a crossing signal, and a pilot bike lane."
+          "summary": "Approves the design and $1.1 million for speed humps, a crossing signal, and a pilot bike lane.",
+          "why": "Changes traffic speeds and crossings on a busy street."
         },
         {
           "id": "it-1201-3",
           "title": "Outreach funding for recognized community planning groups",
           "action": "Advisory",
-          "summary": "Proposes annual outreach funding for recognized planning groups, including translation support."
+          "summary": "Proposes annual outreach funding for recognized planning groups, including translation support.",
+          "why": "Decides outreach support planning groups receive."
         }
       ]
     },
@@ -963,13 +984,15 @@
           "id": "it-1203-1",
           "title": "Recommendation on the Park Boulevard corridor plan",
           "action": "Advisory",
-          "summary": "Vote on a recommendation to the City on the corridor plan."
+          "summary": "Vote on a recommendation to the City on the corridor plan.",
+          "why": "Puts a community recommendation on the corridor plan to the City."
         },
         {
           "id": "it-1203-2",
           "title": "Holiday open house and outreach plan",
           "action": "Advisory",
-          "summary": "Plans a December open house and a schedule for flyers and online notices."
+          "summary": "Plans a December open house and a schedule for flyers and online notices.",
+          "why": "Plans how neighbors learn about group decisions."
         }
       ]
     },
@@ -986,13 +1009,15 @@
           "id": "it-1207-1",
           "title": "Police response times by council district",
           "action": "Advisory",
-          "summary": "Staff proposes a monthly response-time report by council district, starting in January."
+          "summary": "Staff proposes a monthly response-time report by council district, starting in January.",
+          "why": "Shows whether response times differ between council districts."
         },
         {
           "id": "it-1207-2",
           "title": "Accessory dwelling unit impact fee study",
           "action": "Final decision",
-          "summary": "Directs staff to return with fee options that treat units under 800 square feet differently."
+          "summary": "Directs staff to return with fee options that treat units under 800 square feet differently.",
+          "why": "Could change the cost of adding a small home or apartment."
         }
       ]
     },
@@ -1009,13 +1034,15 @@
           "id": "it-1208-1",
           "title": "Six-month transit fare pilot on County routes",
           "action": "Final decision",
-          "summary": "Proposes reduced fares for youth and seniors on county-operated routes for six months."
+          "summary": "Proposes reduced fares for youth and seniors on county-operated routes for six months.",
+          "why": "Would lower fares for youth and seniors who ride county routes."
         },
         {
           "id": "it-1208-2",
           "title": "Emergency medical services contract renewal",
           "action": "Final decision",
-          "summary": "Renews the ambulance services contract for three years with a new response-time standard."
+          "summary": "Renews the ambulance services contract for three years with a new response-time standard.",
+          "why": "Sets the ambulance response standard residents can expect."
         }
       ]
     }
