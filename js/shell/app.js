@@ -551,7 +551,7 @@ function viewApp(){
     <aside class="side" aria-label="Main navigation">${sidebarBody()}</aside>
     <div class="main">
       <header><button class="ghost" data-act="nav" aria-expanded="${state.navOpen}" aria-label="Show or hide menu">☰</button><b>${esc(TITLES[state.page])}</b><span class="spacer"></span>
-        <span class="muted small">${esc(state.user)}${state.addr?' · '+esc(state.addr.full):''}</span>
+        <span class="muted small">${esc(state.user)}${state.addr?'<span class="addr"> · '+esc(state.addr.full)+'</span>':''}</span>
         <button class="ghost" data-act="signout">Sign out</button></header>
       <main id="main" class="wrap">${pages[state.page]()}</main>
       <footer>${esc(DATA_NOTICE)} Checked ${esc(DATA_CHECKED)}. Addresses, community groups, and discussions are sample data.</footer>

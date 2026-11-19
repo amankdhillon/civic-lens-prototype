@@ -174,7 +174,8 @@ button.star.on{background:var(--navy);color:#fff;border-color:var(--navy)}
 
 /* Narrow screens: drawer navigation, stacked feed items */
 @media(max-width:760px){
-  .shell{grid-template-columns:minmax(0,1fr)}
+  .shell,.shell.closed{grid-template-columns:minmax(0,1fr)}
+  .addr{display:none}
   .side{position:fixed;top:0;left:0;bottom:0;height:100vh;width:260px;z-index:5;box-shadow:0 0 24px rgba(0,0,0,.28)}
   .shell.closed .side{display:none}
   header{padding:10px 16px}
