@@ -24,12 +24,12 @@ const aiSection=({text,boardKey,title,id})=>`<section class="card zone-ai" aria-
     </div>
   </details>
 </section>`;
-const TITLES={feed:'Feed',find:'Find my districts',bodies:'Bodies',body:'Public body',meetings:'Meetings',calendar:'My calendar',meeting:'Meeting',boards:'Your discussions',allboards:'All discussion boards',board:'Discussion board',thread:'Thread',item:'Agenda item',explain:'Write an explanation',favorites:'Favorites'};
-const NAV_ON={feed:'feed',find:'find',bodies:'bodies',body:'bodies',meetings:'meetings',meeting:'meetings',calendar:'calendar',boards:'boards',allboards:'boards',board:'boards',thread:'boards',item:'meetings',favorites:'favorites'};
+const TITLES={feed:'Feed',profile:'Profile',bodies:'Bodies',body:'Public body',meetings:'Meetings',meeting:'Meeting',boards:'Discussions',allboards:'All discussion boards',board:'Discussion board',thread:'Thread',item:'Agenda item',explain:'Write an explanation',favorites:'Favorites'};
+const NAV_ON={feed:'feed',profile:'',bodies:'bodies',body:'bodies',meetings:'meetings',meeting:'meetings',boards:'boards',allboards:'boards',board:'boards',thread:'boards',item:'meetings',favorites:'favorites'};
 
 const state={screen:'signin',user:'',error:'',addr:null,page:'meetings',navOpen:true,toggles:{fed:true,county:true,city:true,school:true,cpg:true},
-  bodyId:null,meetingId:null,boardKey:null,threadId:null,query:'',boardQuery:'',drafts:{},followed:{},seq:100,
-  calendar:[],menuFor:null,itemId:null,customEx:{},favItems:{},favBoards:{},aiOpen:{},remote:{threads:[],posts:[]},me:null,ready:false,postError:''};
+  bodyId:null,meetingId:null,boardKey:null,threadId:null,query:'',boardQuery:'',drafts:{},saved:{},seq:100,
+  menuFor:null,itemId:null,customEx:{},aiOpen:{},remote:{threads:[],posts:[]},me:null,ready:false,postError:''};
 
 /* ---------- helpers ---------- */
 const fmtDate=d=>new Date(d+'T12:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'});
@@ -100,8 +100,7 @@ const boardRow=k=>{
   return `<div class="brow">
     <div class="brow-main">${kindTag('discussion')}<button class="linkish" data-act="board" data-key="${esc(k)}">${esc(info.title)}</button>
       <div class="muted small">${esc(info.scope)} · ${actLine(k)}</div></div>
-    <div class="brow-act">${inScope(k)?'<span class="tag">In your area</span>':''}
-      <button class="${state.followed[k]?'':'ghost'}" data-act="follow" data-key="${esc(k)}" aria-pressed="${!!state.followed[k]}">${state.followed[k]?'Following':'Follow'}</button>${starBoardBtn(k)}</div>
+    <div class="brow-act">${inScope(k)?'<span class="tag">In your area</span>':''}${starBtn(k)}</div>
   </div>`;
 };
 
@@ -133,32 +132,30 @@ function backLink(k){
            :`<button class="ghost" data-act="page" data-id="boards" style="margin-bottom:10px">← Your boards</button>`;
 }
 // A meeting can only be added to the calendar. Its discussion lives on the body's board.
-function addControls(m){
-  const cal=state.calendar.includes(m.id);
-  return `<button class="${cal?'ghost':''}" data-act="tocal" data-id="${m.id}" aria-pressed="${cal}">${cal?'Remove from calendar':'Add to calendar'}</button>`;
-}
+function addControls(m){ return starMeetBtn(m.id); }
 
 function meetingRow(m){
-  const cal=state.calendar.includes(m.id), w=whenLabel(m.date), n=m.items.length;
+  const cal=isSaved('meet:'+m.id), w=whenLabel(m.date), n=m.items.length;
   return `<div class="mrow ${isPast(m)?'past':''}"><div class="mdate"><span>${esc(w.wd)}</span><b>${esc(w.day)}</b></div>
     <div class="mtext">${kindTag('meeting')}<button class="linkish" data-act="meeting" data-id="${m.id}">${esc(m.title)}</button>
       <div class="muted small">${esc(BODIES[m.body].name)} · ${esc(m.time)} · ${n} agenda item${n===1?'':'s'}</div>
-      ${cal?'<span class="tag cal">On your calendar</span>':''}</div>
+      ${cal?'<span class="tag cal">Saved</span>':''}</div>
     <div class="mact">${addControls(m)}</div></div>`;
 }
 function listMeetings(ms){return ms.map(meetingRow).join('');}
 function persist(){
-  try{ localStorage.setItem('civic.followed',JSON.stringify(state.followed)); localStorage.setItem('civic.calendar',JSON.stringify(state.calendar)); }catch(e){}
+  try{ localStorage.setItem('civic.saved',JSON.stringify(state.saved)); }catch(e){}
 }
+const isSaved=k=>!!state.saved[k];
 
 // Feed = what the person follows. Community groups are left out of the prototype feed.
 const bodyOfKey=k=>{const [t,id]=splitKey(k);if(t==='body')return id;if(t==='place'&&DIST[id])return DIST[id].body;if(t==='meet'){const m=findMeeting(id);return m?m.body:null;}if(t==='item'){const f=findItem(id);return f?f.m.body:null;}return null;};
 const isCommunityKey=k=>{const [t]=splitKey(k);if(t==='group')return true;const b=bodyOfKey(k);return !!b&&!!BODIES[b]&&BODIES[b].kind==='community';};
-const feedKeys=()=>Object.keys(state.followed).filter(k=>state.followed[k]&&!isCommunityKey(k)&&knownKey(k));
+const feedKeys=()=>Object.keys(state.saved).filter(k=>state.saved[k]&&!isCommunityKey(k)&&knownKey(k));
 const followedBodyIds=()=>[...new Set(feedKeys().map(bodyOfKey).filter(b=>b&&BODIES[b]))];
-const feedMeetings=()=>{const ids=followedBodyIds();const direct=feedKeys().filter(k=>k.startsWith('meet:')).map(k=>splitKey(k)[1]);return MEETINGS.filter(m=>ids.includes(m.body)||direct.includes(m.id)||state.calendar.includes(m.id));};
+const feedMeetings=()=>{const ids=followedBodyIds();const direct=feedKeys().filter(k=>k.startsWith('meet:')).map(k=>splitKey(k)[1]);return MEETINGS.filter(m=>ids.includes(m.body)||direct.includes(m.id));};
 // Baseline follows for a new person: county board, city council, and their council district.
-const baselineFollows=addr=>({['body:'+DIST[addr.d.county].body]:true,['body:'+DIST[addr.d.city].body]:true,['place:'+addr.d.city]:true});
+
 
 // Feed cards. Official records and community discussion look different: official cards have a navy rule and a label; discussion cards have a dashed rule and a label.
 function feedMeetingCard(m){
@@ -198,26 +195,31 @@ function feedDiscussionCard(k){
     </div></article>`;
 }
 
-const persistFavs=()=>{try{localStorage.setItem('civic.favItems',JSON.stringify(state.favItems));localStorage.setItem('civic.favBoards',JSON.stringify(state.favBoards));}catch(e){}};
-const starItemBtn=id=>{const on=!!state.favItems[id];const l=on?'Remove from favorites':'Save to favorites';return `<button class="star ${on?'on':''}" data-act="staritem" data-id="${esc(id)}" aria-pressed="${on}" aria-label="${l}" title="${l}">${on?'★':'☆'}</button>`;};
+const starBtn=k=>{const on=isSaved(k);const l=on?'Remove from favorites':'Save to favorites';return `<button class="star ${on?'on':''}" data-act="save" data-key="${esc(k)}" aria-pressed="${on}" aria-label="${l}" title="${l}">${on?'★':'☆'}</button>`;};
+const starItemBtn=id=>starBtn('item:'+id);
+const starMeetBtn=id=>starBtn('meet:'+id);
+const starBoardBtn=k=>starBtn(k);
 
-const starBoardBtn=k=>{if(k.startsWith('item:'))return '';const on=!!state.favBoards[k];const l=on?'Remove from favorites':'Save to favorites';return `<button class="star ${on?'on':''}" data-act="starboard" data-key="${esc(k)}" aria-pressed="${on}" aria-label="${l}" title="${l}">${on?'★':'☆'}</button>`;};
+
+
 
 const legendHtml=()=>`<div class="legend" aria-label="Color key"><span class="tag up">Upcoming</span><span class="tag ok">Passed or result</span><span class="tag final">Final vote</span><span class="tag adv">Advice only</span><span class="tag exp">Explanation</span><span class="tag">Comment</span></div>`;
 
 function viewFeed(){
-  if(!state.addr) return `<section class="card"><h1>Welcome, ${esc(state.user)}</h1><p class="muted">Find your districts first. Your feed shows meetings and decisions for the bodies that represent you.</p><div class="bar"><button data-act="page" data-id="find">Find my districts</button></div></section>`;
+  if(!state.addr) return `<section class="card"><h1>Welcome, ${esc(state.user)}</h1><p class="muted">Find your districts first. Your feed shows meetings and decisions for the bodies that represent you.</p><div class="bar"><button data-act="page" data-id="profile">Set your address</button></div></section>`;
   const ms=feedMeetings();
   const up=ms.filter(m=>!isPast(m)).sort(byAsc).slice(0,3);
   const decisions=ms.filter(isPast).sort(byDesc).flatMap(m=>m.items.filter(i=>i.result).map(i=>({m,i}))).slice(0,2);
   return `${legendHtml()}
-    <section class="card"><h2>Coming up</h2>${up.length?up.map(feedMeetingCard).join(''):'<p class="muted">No upcoming meetings for what you follow. <button class="linkish" data-act="page" data-id="meetings">Browse meetings</button></p>'}</section>
-    <section class="card"><h2>Recent decisions</h2>${decisions.length?decisions.map(({m,i})=>feedDecisionCard(m,i)).join(''):'<p class="muted">No recent decisions for what you follow yet.</p>'}</section>`;
+    <section class="card"><h2>Coming up</h2>${up.length?up.map(feedMeetingCard).join(''):'<p class="muted">No upcoming meetings for what you saved. <button class="linkish" data-act="page" data-id="meetings">Browse meetings</button></p>'}</section>
+    <section class="card"><h2>Recent decisions</h2>${decisions.length?decisions.map(({m,i})=>feedDecisionCard(m,i)).join(''):'<p class="muted">No recent decisions for what you saved yet.</p>'}</section>`;
 }
 
 function viewFavorites(){
-  const items=Object.keys(state.favItems).filter(id=>state.favItems[id]).map(id=>findItem(id)).filter(Boolean).sort((x,y)=>x.m.date.localeCompare(y.m.date));
-  const boards=Object.keys(state.favBoards).filter(k=>state.favBoards[k]&&knownKey(k)&&!k.startsWith('item:'));
+  const keys=Object.keys(state.saved).filter(k=>state.saved[k]&&knownKey(k));
+  const boards=keys.filter(k=>!k.startsWith('item:')&&!k.startsWith('meet:')&&!k.startsWith('thread:'));
+  const items=keys.filter(k=>k.startsWith('item:')).map(k=>findItem(splitKey(k)[1])).filter(Boolean).sort((x,y)=>x.m.date.localeCompare(y.m.date));
+  const meetings=keys.filter(k=>k.startsWith('meet:')).map(k=>findMeeting(splitKey(k)[1])).filter(Boolean).sort(byAsc);
   const itemRows=items.map(({m,it})=>{
     const ik='item:'+it.id, past=isPast(m), ex=explainCount(ik), cm=commentCount(ik);
     return `<div class="fav-row"><div class="fav-main"><p class="eyebrow">${esc(BODIES[m.body].name)} · ${fmtDate(m.date)}</p>
@@ -227,13 +229,21 @@ function viewFavorites(){
       <div class="fav-act"><button data-act="item" data-id="${it.id}">Open item</button>${starItemBtn(it.id)}</div></div>`;
   }).join('');
   const boardRows=boards.map(k=>{const info=boardInfo(k);return `<div class="fav-row"><div class="fav-main"><button class="linkish" data-act="board" data-key="${esc(k)}">${esc(info.title)}</button><div class="muted small">${esc(info.scope)} · ${actLine(k)}</div></div><div class="fav-act"><button data-act="board" data-key="${esc(k)}">Open board</button>${starBoardBtn(k)}</div></div>`;}).join('');
-  return `<section class="card"><h1>Favorites</h1><p class="muted">Agenda items and discussion boards you saved for quick access. Saving is separate from following a board. Saving does not send updates.</p></section>
-    <section class="card"><h2>Saved agenda items</h2>${itemRows||'<p class="muted">No saved items yet. Open an agenda item and choose Save item.</p>'}</section>
-    <section class="card"><h2>Saved discussion boards</h2>${boardRows||'<p class="muted">No saved boards yet. Open a board and choose Save board.</p>'}</section>`;
+  const meetRows=meetings.map(m=>`<div class="fav-row"><div class="fav-main"><p class="eyebrow">${esc(BODIES[m.body].name)} · ${fmtDate(m.date)} · ${esc(m.time)}</p>
+      <button class="linkish" data-act="meeting" data-id="${m.id}">${esc(m.title)}</button>
+      <p class="tags"><span class="tag ${isPast(m)?'prev':'up'}">${isPast(m)?'Previous':'Upcoming'}</span></p></div>
+      <div class="fav-act"><button data-act="meeting" data-id="${m.id}">Open meeting</button>${starMeetBtn(m.id)}</div></div>`).join('');
+  return `<section class="card"><h1>Favorites</h1><p class="muted">Everything you star is kept here: discussions to follow, agenda items to review, and meetings to attend.</p></section>
+    <section class="card zone-community"><p class="zone-label">Residents</p><h2>Discussions</h2>${boardRows||'<p class="muted">No saved discussions yet. Open a board and tap the star.</p>'}</section>
+    <section class="card zone-official"><p class="zone-label">Official record</p><h2>Agenda items</h2>${itemRows||'<p class="muted">No saved agenda items yet. Open an item and tap the star.</p>'}</section>
+    <section class="card zone-official"><p class="zone-label">Official record</p><h2>Meetings</h2>${meetRows||'<p class="muted">No saved meetings yet. Tap the star on a meeting to keep it here.</p>'}</section>`;
 }
 
+function viewProfile(){
+  return `<div class="card"><h1>Profile</h1><p class="muted">Signed in as ${esc(state.user)}.</p><div class="bar"><button class="ghost" data-act="signout">Sign out</button></div></div>`+viewFind();
+}
 function viewFind(){
-  return `<div class="card"><h1>Find my districts</h1><p class="muted">Search a San Diego address. Prototype: only the sample addresses match until the geocoder is added.</p>
+  return `<div class="card"><h2>Your address and districts</h2><p class="muted">Search a San Diego address. Prototype: only the sample addresses match until the geocoder is added.</p>
     <label for="q" class="small">Address</label>
     <input id="q" placeholder="Type a San Diego address" value="${esc(state.query)}" autocomplete="off">
     <div id="results" style="margin-top:10px">${findResults()}</div></div>`;
@@ -272,20 +282,20 @@ const canPost=k=>{
   const body=t==='body'?id:bodyOfKey(k);
   return !!body && Object.values(state.addr.d).some(p=>DIST[p].body===body);
 };
-const joinTag=k=>canPost(k)?'<span class="tag ok">Joined: you can post</span>':'<span class="tag">Follow only</span>';
+const joinTag=k=>canPost(k)?'<span class="tag ok">In your district: you can post</span>':'<span class="tag">Read only</span>';
 function districtSection(p){
   const d=DIST[p], yours=mine(p), key='place:'+p;
   const role=d.note?d.note.replace(/\.$/,''):'';
   return `<div class="dist-row${yours?' dist-mine':''}">
     <div><b>${esc(d.label)}</b> <span class="muted">· ${esc(d.rep)}</span>${yours?' <span class="tag ok">Your district</span>':''}
       ${role?`<p class="muted small">Board role: ${esc(role)}</p>`:''}</div>
-    <button class="linkish" data-act="board" data-key="${esc(key)}">Open board →</button>
+    <div class="dist-act"><button class="linkish" data-act="board" data-key="${esc(key)}">Open board →</button>${starBtn(key)}</div>
   </div>`;
 }
 function viewBody(){
   const b=BODIES[state.bodyId];
   const ms=MEETINGS.filter(m=>m.body===state.bodyId);
-  const key='body:'+state.bodyId, fol=!!state.followed[key];
+  const key='body:'+state.bodyId;
   const up=ms.filter(m=>!isPast(m)).sort(byAsc), prev=ms.filter(isPast).sort(byDesc);
   const districts=Object.keys(DIST).filter(p=>DIST[p].body===state.bodyId);
   const threads=boardFor(key).threads;
@@ -308,7 +318,7 @@ function viewBody(){
     <section class="card zone-community"><p class="zone-label">Residents</p><h2>Discussion</h2>
       <p class="small">Ask questions and share views about this body's work. ${threads.length} thread${threads.length===1?'':'s'} so far.</p>
       <div class="bar"><button data-act="board" data-key="${esc(key)}">Open discussion board</button>
-        <button class="ghost" data-act="follow" data-key="${esc(key)}" aria-pressed="${fol}">${fol?'Following':'Follow for updates'}</button></div>
+        ${starBtn(key)}</div>
       ${canPost(key)?'':'<p class="muted small">You can read and follow this board. Only people in districts this body covers can post.</p>'}
     </section>
     <section class="card zone-official"><p class="zone-label">Official record</p><h2>Upcoming meetings</h2>
@@ -336,7 +346,7 @@ function meetingThreads(m){return boardFor('body:'+m.body).threads.filter(th=>th
 function viewMeeting(){
   const m=findMeeting(state.meetingId);
   if(!m) return `<section class="card"><p class="muted">No meeting selected. Open one from Meetings.</p></section>`;
-  const past=isPast(m), b=BODIES[m.body], cal=state.calendar.includes(m.id);
+  const past=isPast(m), b=BODIES[m.body], cal=isSaved('meet:'+m.id);
   const fin=m.items.filter(i=>i.action==='Final decision').length;
   const resulted=m.items.filter(i=>i.result).length;
   const overview=m.items.length
@@ -360,7 +370,7 @@ function viewMeeting(){
       <p class="eyebrow">${esc(b.name)}</p>
       <h1>${esc(m.title)}</h1>
       <p class="meta">${fmtDate(m.date)} · ${esc(m.time)}${b.where?` · ${esc(b.where)}`:''}</p>
-      <p class="tags"><span class="tag ${past?'prev':'up'}">${past?'Previous':'Upcoming'}</span>${cal?'<span class="tag cal">On your calendar</span>':''}</p>
+      <p class="tags"><span class="tag ${past?'prev':'up'}">${past?'Previous':'Upcoming'}</span>${cal?'<span class="tag cal">Saved</span>':''}</p>
       <p class="small"><b>What this body is:</b> ${esc(BODY_PLAIN[m.body]||'')}</p>
       <div class="bar">${addControls(m)}</div>
     </section>
@@ -376,11 +386,6 @@ function viewMeeting(){
       <div class="bar"><button class="ghost" data-act="meetthread" data-id="${m.id}">Start a thread about this meeting</button></div></section>`;
 }
 
-function viewCalendar(){
-  const ms=state.calendar.map(id=>findMeeting(id)).filter(Boolean).sort(byAsc);
-  if(!ms.length) return `<div class="card"><h1>My calendar</h1><p class="muted">Meetings you add appear here and in your feed. Use the + beside any meeting, then choose Add to calendar.</p><button class="ghost" data-act="page" data-id="meetings">Browse meetings</button></div>`;
-  return `<div class="card"><h1>My calendar</h1><p class="muted">Meetings you added. They also appear in your feed.</p>${listMeetings(ms)}</div>`;
-}
 
 function boardsHtml(){
   const q=state.boardQuery.trim().toLowerCase();
@@ -393,14 +398,14 @@ function boardsHtml(){
   }).join('')||'<div class="card"><p class="muted">No boards match that search.</p></div>';
 }
 function viewBoards(){
-  const keys=feedKeys().sort((a,b)=>boardStats(b).last.localeCompare(boardStats(a).last));
-  const list=keys.length?keys.map(boardRow).join(''):'<p class="muted">You are not following any boards yet. Follow a body, a meeting, or a topic and it appears here.</p>';
+  const keys=feedKeys().filter(k=>!/^(item|meet|thread):/.test(k)).sort((a,b)=>boardStats(b).last.localeCompare(boardStats(a).last));
+  const list=keys.length?keys.map(boardRow).join(''):'<p class="muted">You have not saved any boards yet. Tap the star on a body, district, or topic and it appears here.</p>';
   return `<div class="card"><h1>Your discussions</h1><p class="muted">The boards you follow, most recent activity first.</p>${list}
     <div class="bar" style="margin-top:12px"><button class="ghost" data-act="page" data-id="allboards">See all boards</button></div></div>`;
 }
 function viewAllBoards(){
   return `<div class="card"><button class="ghost" data-act="page" data-id="boards" style="margin-bottom:10px">← Your boards</button>
-      <h1>All discussion boards</h1><p class="muted">Boards are where people talk. Follow a board to see it on your boards page. You can post only in boards that cover your districts.</p>
+      <h1>All discussion boards</h1><p class="muted">Boards are where people talk. Star a board to keep it in Discussions. You can post only in boards that cover your districts.</p>
       <label for="bq" class="small">Search boards</label>
       <input id="bq" value="${esc(state.boardQuery)}" placeholder="For example, streets or budget" autocomplete="off"></div>
     <div id="board-list">${boardsHtml()}</div>`;
@@ -549,12 +554,12 @@ function viewBoard(){
       <textarea id="nb" rows="3" data-draft="newbody:${esc(f)}">${esc(db)}</textarea>
       <div class="err" id="newerr"></div>
       <div style="margin-top:6px"><button data-act="newthread" data-key="${esc(f)}">Post thread</button></div></div>`
-    : `<div class="card"><h2>Follow only</h2><p class="muted">You can read and follow this board. Posting is limited to people whose districts cover it.</p></div>`;
+    : `<div class="card"><h2>Read only</h2><p class="muted">You can read and follow this board. Posting is limited to people whose districts cover it.</p></div>`;
   return `<div class="card">${backLink(f)}
       <span class="tag">${esc(info.scope)}</span> ${joinTag(f)}
       <h1 style="margin-top:6px">${esc(info.title)}</h1><p>${esc(info.sub)}</p>
       <div class="bar"><span class="muted small">${st.count} thread${st.count===1?'':'s'}</span>
-        <button class="${state.followed[f]?'':'ghost'}" data-act="follow" data-key="${esc(f)}" aria-pressed="${!!state.followed[f]}">${state.followed[f]?'Following':'Follow this board'}</button>${starBoardBtn(f)}</div></div>
+        ${starBoardBtn(f)}</div></div>
     ${form}
     <div class="card"><h2>Threads</h2>${list}</div>`;
 }
@@ -569,10 +574,10 @@ function viewThread(){
       <textarea id="rp" rows="3" data-draft="${esc(rk)}">${esc(state.drafts[rk]||'')}</textarea>
       <div class="err" role="alert">${esc(state.postError||'')}</div>
       <div style="margin-top:6px"><button data-act="reply" data-key="${esc(state.boardKey)}" data-id="${esc(t.id)}">Post reply</button></div></div>`
-    : `<div class="card"><h2>Follow only</h2><p class="muted">Replies are limited to people whose districts cover this board.</p></div>`;
+    : `<div class="card"><h2>Read only</h2><p class="muted">Replies are limited to people whose districts cover this board.</p></div>`;
   return `<div class="card"><button class="ghost" data-act="board" data-key="${esc(state.boardKey)}" style="margin-bottom:10px">← ${esc(info.title)}</button>
       <span class="tag">${esc(KIND_LABEL[t.kind])}</span>
-      <h1 style="margin-top:6px">${esc(t.title)}</h1><div class="bar"><button class="${state.followed['thread:'+t.id]?'':'ghost'}" data-act="follow" data-key="${esc('thread:'+t.id)}" aria-pressed="${!!state.followed['thread:'+t.id]}">${state.followed['thread:'+t.id]?'Following this thread':'Follow this thread'}</button></div></div>
+      <h1 style="margin-top:6px">${esc(t.title)}</h1></div>
     <div class="card"><h2>Posts</h2>${t.posts.map(p=>`<div class="post"><b>${esc(p.who)}</b> <span class="muted small">${esc(fmtShort(p.t))}</span><div class="pre">${esc(p.text)}</div></div>`).join('')}</div>
     ${reply}`;
 }
@@ -581,8 +586,8 @@ function viewThread(){
 function sidebarBody(){
   const item=(id,label,icon)=>`<button class="navbtn ${NAV_ON[state.page]===id?'on':''}" data-act="page" data-id="${id}" ${NAV_ON[state.page]===id?'aria-current="page"':''}>${svgIcon(icon)}<span>${label}</span></button>`;
   const nav=`<div class="navgroup"><div class="navhead">Home</div>${item('meetings','Meetings','calendar')}${item('feed','Feed','feed')}${item('favorites','Favorites','star')}</div>
-    <div class="navgroup"><div class="navhead">Find districts</div>${item('find','Find my districts','pin')}</div>
-    <div class="navgroup"><div class="navhead">Government</div>${item('bodies','Bodies','building')}${item('calendar','My calendar','check')}</div>
+    
+    <div class="navgroup"><div class="navhead">Government</div>${item('bodies','Bodies','building')}</div>
     <div class="navgroup"><div class="navhead">Talk</div>${item('boards','Discussions','chat')}</div>`;
   const districts=state.addr
     ? `<div class="sidebox"><h2>Districts shown</h2>${WORKING.map(l=>`<label class="tg"><input type="checkbox" data-act="toggle" data-id="${l}" ${state.toggles[l]?'checked':''}><span><b>${esc(LEVEL_LABEL[l])}</b><br><span class="muted small">${esc(DIST[state.addr.d[l]].label)}</span></span></label>`).join('')}
@@ -593,14 +598,14 @@ function sidebarBody(){
 }
 
 function viewApp(){
-  const pages={feed:viewFeed,find:viewFind,bodies:viewBodies,body:viewBody,meetings:viewMeetings,calendar:viewCalendar,meeting:viewMeeting,boards:viewBoards,allboards:viewAllBoards,board:viewBoard,thread:viewThread,item:viewItem,explain:viewExplain,favorites:viewFavorites};
+  const pages={feed:viewFeed,profile:viewProfile,bodies:viewBodies,body:viewBody,meetings:viewMeetings,meeting:viewMeeting,boards:viewBoards,allboards:viewAllBoards,board:viewBoard,thread:viewThread,item:viewItem,explain:viewExplain,favorites:viewFavorites};
   const sub=state.page==='board'||state.page==='thread'?(boardInfo(state.boardKey).title):'';
   return `<div class="shell ${state.navOpen?'':'closed'}">
     <aside class="side" aria-label="Main navigation">${sidebarBody()}</aside>
     ${state.navOpen?'<div class="scrim" data-act="nav"></div>':''}
     <div class="main">
       <header><button class="ghost" data-act="nav" aria-expanded="${state.navOpen}" aria-label="Show or hide menu">☰</button><b>${esc(TITLES[state.page])}</b><span class="spacer"></span>
-        <span class="muted small">${esc(state.user)}${state.addr?'<span class="addr"> · '+esc(state.addr.full)+'</span>':''}</span>
+        <button class="ghost" data-act="page" data-id="profile">${esc(state.user)}</button>${state.addr?'<span class="addr muted small"> · '+esc(state.addr.full)+'</span>':''}
         <button class="ghost" data-act="signout">Sign out</button></header>
       <main id="main" class="wrap">${pages[state.page]()}</main>
       <footer>${esc(DATA_NOTICE)} Checked ${esc(DATA_CHECKED)}. Addresses, community groups, and discussions are sample data.</footer>
@@ -626,7 +631,6 @@ async function signin(){
 async function chooseAddress(id){
   state.addr=ADDRESSES.find(a=>a.id===id);
   Object.assign(state,{page:'meetings',toggles:{fed:true,county:true,city:true,school:true,cpg:true},meetingId:null,postError:''});
-  state.followed={};persist();
   const places=Object.values(state.addr.d);
   const bodies=[...new Set(places.map(p=>DIST[p].body))].filter(Boolean);
   try{ localStorage.setItem('civic.addr',id); }catch(e){}
@@ -635,8 +639,8 @@ async function chooseAddress(id){
 }
 async function signOutApp(){
   try{ await dbSignOut(); }catch(e){}
-  try{ localStorage.removeItem('civic.addr'); localStorage.removeItem('civic.followed'); localStorage.removeItem('civic.calendar'); }catch(e){}
-  Object.assign(state,{screen:'signin',user:'',addr:null,error:'',page:'feed',me:null,calendar:[],followed:{},menuFor:null,remote:{threads:[],posts:[]}});
+  try{ localStorage.removeItem('civic.addr'); localStorage.removeItem('civic.saved'); }catch(e){}
+  Object.assign(state,{screen:'signin',user:'',addr:null,error:'',page:'feed',me:null,saved:{},menuFor:null,remote:{threads:[],posts:[]}});
   render();
 }
 async function postNewThread(key){
@@ -667,6 +671,17 @@ async function postReply(key,threadId){
   }catch(e){ state.postError=e.message; }
   render();
 }
+// One save model: earlier builds kept follows, calendar, and favorites under separate keys. Fold them into one.
+function migrateSaved(){
+  const rd=k=>{try{return JSON.parse(localStorage.getItem(k)||'null');}catch(e){return null;}};
+  const out={};
+  Object.entries(rd('civic.followed')||{}).forEach(([k,v])=>{ if(v&&!k.startsWith('thread:')) out[k]=true; });
+  (rd('civic.calendar')||[]).forEach(id=>{ out['meet:'+id]=true; });
+  Object.entries(rd('civic.favItems')||{}).forEach(([id,v])=>{ if(v) out['item:'+id]=true; });
+  Object.entries(rd('civic.favBoards')||{}).forEach(([k,v])=>{ if(v) out[k]=true; });
+  try{ localStorage.setItem('civic.saved',JSON.stringify(out)); }catch(e){}
+  return out;
+}
 async function boot(){
   try{
     state.me=await dbStart();
@@ -674,11 +689,11 @@ async function boot(){
       state.user=state.me.nickname; state.screen='app';
       let saved=null; try{ saved=localStorage.getItem('civic.addr'); }catch(e){}
       state.addr=ADDRESSES.find(a=>a.id===saved)||null;
-      try{const f=JSON.parse(localStorage.getItem('civic.followed')||'null');const c=JSON.parse(localStorage.getItem('civic.calendar')||'null');if(c)state.calendar=c;state.followed=f||{};}catch(e){state.followed={};}
+      try{state.saved=JSON.parse(localStorage.getItem('civic.saved')||'null')||migrateSaved();}catch(e){state.saved={};}
     }
     await reloadBoards();
   }catch(e){ state.error='Could not connect to the database. '+e.message; }
-  try{state.favItems=JSON.parse(localStorage.getItem('civic.favItems')||'{}');state.favBoards=JSON.parse(localStorage.getItem('civic.favBoards')||'{}');}catch(e){}
+
   state.navOpen=window.matchMedia('(min-width:761px)').matches;
   state.ready=true;
   render();
@@ -694,7 +709,7 @@ document.addEventListener('click',e=>{
   if(act==='signout') return signOutApp();
   if(act==='page') return go(id,{meetingId:null,boardKey:null,threadId:null});
   if(act==='meeting') return go('meeting',{meetingId:id,menuFor:null});
-  if(act==='tocal'){const i=state.calendar.indexOf(id);if(i>=0)state.calendar.splice(i,1);else state.calendar.push(id);state.menuFor=id;persist();return render();}
+  if(act==='save'){ if(state.saved[key]) delete state.saved[key]; else state.saved[key]=true; persist(); return render(); }
   if(act==='body') return go('body',{bodyId:id});
   if(act==='item') return go('item',{itemId:id,threadId:null});
   if(act==='explain') return go('explain',{itemId:id});
@@ -712,8 +727,8 @@ document.addEventListener('click',e=>{
     });
   }
   if(act==='meetthread'){const m=findMeeting(id);state.drafts['newtitle:body:'+m.body]=fmtShort(m.date)+' meeting: ';return go('board',{boardKey:'body:'+m.body,threadId:null});}
-  if(act==='staritem'){if(state.favItems[id]) delete state.favItems[id]; else state.favItems[id]=true; persistFavs(); return render();}
-  if(act==='starboard'){if(state.favBoards[key]) delete state.favBoards[key]; else state.favBoards[key]=true; persistFavs(); return render();}
+
+
   if(act==='exskip'){state.drafts[exKey(key,id)]='';return render();}
   if(act==='excadd'){const q=(state.drafts['excq:'+key]||'').trim(),a=(state.drafts['exca:'+key]||'').trim();
     if(!q||!a){const e=document.getElementById('newerr');if(e) e.textContent='Add both a question and an answer.';return;}
@@ -721,7 +736,7 @@ document.addEventListener('click',e=>{
   if(act==='exdel'){(state.customEx[key]||[]).splice(Number(id),1);return render();}
   if(act==='board'){ if(key&&key.startsWith('item:')) return go('item',{itemId:key.slice(5),threadId:null}); return go('board',{boardKey:key,threadId:null}); }
   if(act==='thread') return go('thread',{boardKey:key,threadId:id});
-  if(act==='follow'){state.followed[key]=!state.followed[key];persist();return render();}
+
   if(act==='newthread') return postNewThread(key);
   if(act==='reply') return postReply(key,id);
 });
