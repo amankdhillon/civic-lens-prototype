@@ -224,3 +224,6 @@ button{min-height:40px;font-size:16px}
 .plain{margin:12px 0;padding:12px 14px;background:var(--soft);border-left:3px solid var(--navy);border-radius:6px}
 details.flag{margin-top:12px}
 details.flag summary{cursor:pointer;color:var(--navy);font-weight:600;padding:6px 0}
+.dist-list{margin-top:8px}
+.dist-row{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:12px 0;border-top:1px solid var(--line)}
+.dist-row.dist-mine{border-left:3px solid var(--navy);padding-left:12px}

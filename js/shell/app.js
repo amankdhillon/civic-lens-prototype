@@ -24,7 +24,7 @@ const aiSection=({text,boardKey,title,id})=>`<section class="card zone-ai" aria-
     </div>
   </details>
 </section>`;
-const TITLES={feed:'Feed',find:'Find my districts',bodies:'Bodies',body:'Body',meetings:'Meetings',calendar:'My calendar',meeting:'Meeting',boards:'Your discussions',allboards:'All discussion boards',board:'Discussion board',thread:'Thread',item:'Agenda item',explain:'Write an explanation',favorites:'Favorites'};
+const TITLES={feed:'Feed',find:'Find my districts',bodies:'Bodies',body:'Public body',meetings:'Meetings',calendar:'My calendar',meeting:'Meeting',boards:'Your discussions',allboards:'All discussion boards',board:'Discussion board',thread:'Thread',item:'Agenda item',explain:'Write an explanation',favorites:'Favorites'};
 const NAV_ON={feed:'feed',find:'find',bodies:'bodies',body:'bodies',meetings:'meetings',meeting:'meetings',calendar:'calendar',boards:'boards',allboards:'boards',board:'boards',thread:'boards',item:'meetings',favorites:'favorites'};
 
 const state={screen:'signin',user:'',error:'',addr:null,page:'meetings',navOpen:true,toggles:{fed:true,county:true,city:true,school:true,cpg:true},
@@ -274,14 +274,13 @@ const canPost=k=>{
 };
 const joinTag=k=>canPost(k)?'<span class="tag ok">Joined: you can post</span>':'<span class="tag">Follow only</span>';
 function districtSection(p){
-  const d=DIST[p], yours=mine(p), key='place:'+p, fol=!!state.followed[key];
-  return `<details class="dist" ${yours?'open':''}>
-    <summary><b>${esc(d.label)}</b><span class="muted"> · ${esc(d.rep)}</span> ${yours?kindTag('yours'):kindTag('other')}</summary>
-    <div class="dist-body">${d.note?`<p class="small">${esc(d.note)}</p>`:''}
-      <div class="bar"><button data-act="board" data-key="${esc(key)}">Open district board</button>
-      <button class="${fol?'':'ghost'}" data-act="follow" data-key="${esc(key)}" aria-pressed="${fol}">${fol?'Following':'Follow'}</button></div>
-      ${yours?'':'<p class="muted small">You can read and follow this board. Only people in this district can post.</p>'}
-    </div></details>`;
+  const d=DIST[p], yours=mine(p), key='place:'+p;
+  const role=d.note?d.note.replace(/\.$/,''):'';
+  return `<div class="dist-row${yours?' dist-mine':''}">
+    <div><b>${esc(d.label)}</b> <span class="muted">· ${esc(d.rep)}</span>${yours?' <span class="tag ok">Your district</span>':''}
+      ${role?`<p class="muted small">Board role: ${esc(role)}</p>`:''}</div>
+    <button class="linkish" data-act="board" data-key="${esc(key)}">Open board →</button>
+  </div>`;
 }
 function viewBody(){
   const b=BODIES[state.bodyId];
@@ -289,32 +288,37 @@ function viewBody(){
   const key='body:'+state.bodyId, fol=!!state.followed[key];
   const up=ms.filter(m=>!isPast(m)).sort(byAsc), prev=ms.filter(isPast).sort(byDesc);
   const districts=Object.keys(DIST).filter(p=>DIST[p].body===state.bodyId);
-  const roster=b.roster&&b.roster.length
-    ? `<h2 style="margin-top:14px">Members</h2>`+b.roster.map(r=>`<div class="row"><div><b>${esc(r.name)}</b><div class="muted small">${esc(r.role)}</div></div></div>`).join('')
-    : '';
-  const facts=[b.schedule&&`<b>Schedule:</b> ${esc(b.schedule)}`, b.where&&`<b>Where:</b> ${esc(b.where)}`, b.address&&`<b>Address:</b> ${esc(b.address)}`]
-    .filter(Boolean).map(x=>`<p class="small">${x}</p>`).join('');
+  const threads=boardFor(key).threads;
+  const schedule=b.schedule&&!/^not stated/i.test(b.schedule)?b.schedule:'Meeting times are on the official page.';
   const src=b.source
     ? `<p class="muted small">Source: <a href="${esc(b.source)}" target="_blank" rel="noopener">official page</a>, checked ${esc(b.checked||'')}. Verify before relying on it.</p>`
     : '<p class="muted small">Sample or not yet checked. Verify before relying on it.</p>';
-  const seats=districts.length
-    ? `<h2 style="margin-top:14px">Districts</h2><p class="muted small">Every district board can be read and followed. You are joined to your own district by your address, so only those boards accept your posts.</p>${districts.map(districtSection).join('')}`
-    : '';
-  return `<div class="card"><button class="ghost" data-act="page" data-id="bodies" style="margin-bottom:10px">← Back to bodies</button>
-    <h1>${esc(b.name)}</h1><p>${esc(b.about)}</p>
-    <div class="plain"><b>In plain words:</b> ${esc(BODY_PLAIN[state.bodyId]||b.about)}</div>
-    <span class="tag">${esc(kindLabel(b))}</span>
-    ${inScope(key)?'<span class="tag ok">In your area</span>':''}
-    ${facts}
-    <div class="bar" style="margin-top:10px">
-      <button data-act="board" data-key="${esc(key)}">Open discussion board</button>
-      <button class="ghost" data-act="follow" data-key="${esc(key)}" aria-pressed="${fol}">${fol?'Following':'Follow'}</button>
-    </div>
-    ${seats}
-    <h2 style="margin-top:14px">Upcoming meetings</h2>${up.length?listMeetings(up):'<p class="muted">No upcoming meetings listed on the checked calendar.</p>'}
-    <h2 style="margin-top:14px">Previous meetings</h2>${prev.length?listMeetings(prev):'<p class="muted">No previous meetings listed on the checked calendar.</p>'}
-    ${roster}
-    ${src}</div>`;
+  return `<div id="newerr" class="err" role="alert"></div>
+    <section class="card">
+      <button class="ghost" data-act="page" data-id="bodies" style="margin-bottom:14px">← Back to bodies</button>
+      <p class="eyebrow">${esc(kindLabel(b))}${inScope(key)?' · In your area':''}</p>
+      <h1>${esc(b.name)}</h1>
+      <p>${esc(BODY_PLAIN[state.bodyId]||b.about)}</p>
+    </section>
+    <section class="card zone-official"><p class="zone-label">About this body</p><h2>Meetings and where</h2>
+      <p class="small"><b>Meets:</b> ${esc(schedule)}</p>
+      ${b.where?`<p class="small"><b>Where:</b> ${esc(b.where)}</p>`:''}
+      ${src}
+    </section>
+    <section class="card zone-community"><p class="zone-label">Residents</p><h2>Discussion</h2>
+      <p class="small">Ask questions and share views about this body's work. ${threads.length} thread${threads.length===1?'':'s'} so far.</p>
+      <div class="bar"><button data-act="board" data-key="${esc(key)}">Open discussion board</button>
+        <button class="ghost" data-act="follow" data-key="${esc(key)}" aria-pressed="${fol}">${fol?'Following':'Follow for updates'}</button></div>
+      ${canPost(key)?'':'<p class="muted small">You can read and follow this board. Only people in districts this body covers can post.</p>'}
+    </section>
+    <section class="card zone-official"><p class="zone-label">Official record</p><h2>Upcoming meetings</h2>
+      ${up.length?listMeetings(up):'<p class="muted">No upcoming meetings listed on the checked calendar.</p>'}</section>
+    <section class="card zone-official"><h2>Previous meetings</h2>
+      ${prev.length?listMeetings(prev.slice(0,2)):'<p class="muted">No previous meetings listed on the checked calendar.</p>'}</section>
+    <section class="card"><h2>Districts</h2>
+      <p class="muted small">Each seat represents one district. You can read every district board. You can post only in your own.</p>
+      <div class="dist-list">${districts.map(districtSection).join('')}</div>
+    </section>`;
 }
 
 function viewMeetings(){
@@ -577,11 +581,11 @@ function viewThread(){
 function sidebarBody(){
   const item=(id,label,icon)=>`<button class="navbtn ${NAV_ON[state.page]===id?'on':''}" data-act="page" data-id="${id}" ${NAV_ON[state.page]===id?'aria-current="page"':''}>${svgIcon(icon)}<span>${label}</span></button>`;
   const nav=`<div class="navgroup"><div class="navhead">Home</div>${item('meetings','Meetings','calendar')}${item('feed','Feed','feed')}${item('favorites','Favorites','star')}</div>
-    <div class="navgroup"><div class="navhead">Your districts</div>${item('find','Find my districts','pin')}</div>
+    <div class="navgroup"><div class="navhead">Find districts</div>${item('find','Find my districts','pin')}</div>
     <div class="navgroup"><div class="navhead">Government</div>${item('bodies','Bodies','building')}${item('calendar','My calendar','check')}</div>
     <div class="navgroup"><div class="navhead">Talk</div>${item('boards','Discussions','chat')}</div>`;
   const districts=state.addr
-    ? `<div class="sidebox"><h2>Your districts</h2>${WORKING.map(l=>`<label class="tg"><input type="checkbox" data-act="toggle" data-id="${l}" ${state.toggles[l]?'checked':''}><span><b>${esc(LEVEL_LABEL[l])}</b><br><span class="muted small">${esc(DIST[state.addr.d[l]].label)}</span></span></label>`).join('')}
+    ? `<div class="sidebox"><h2>Districts shown</h2>${WORKING.map(l=>`<label class="tg"><input type="checkbox" data-act="toggle" data-id="${l}" ${state.toggles[l]?'checked':''}><span><b>${esc(LEVEL_LABEL[l])}</b><br><span class="muted small">${esc(DIST[state.addr.d[l]].label)}</span></span></label>`).join('')}
         <p class="muted small">Show meetings and boards for each area. State and U.S. House info pages are not working yet.</p></div>`
     : `<div class="sidebox"><p class="muted small">No address set. Use Find my districts.</p></div>`;
   const menuIcon='<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>';
