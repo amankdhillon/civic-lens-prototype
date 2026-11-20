@@ -1,19 +1,28 @@
 // Every kind of thing on the page has one label and one colour. Colour is never the only cue.
 const KIND={meeting:['Meeting','k-meeting'],item:['Agenda item','k-item'],decision:['Decision','k-decision'],discussion:['Discussion','k-discussion'],yours:['Your district','k-yours'],other:['Other district','k-other']};
 const kindTag=k=>`<span class="kind ${KIND[k][1]}">${KIND[k][0]}</span>`;
-// Sample AI summaries for the demo only. The text is written from titles and labels, not generated from the agenda.
-const aiMeeting=m=>`In short: ${m.items.length} agenda item${m.items.length===1?'':'s'}. ${m.items.map(i=>i.title).join('; ')}.`;
-const aiItem=it=>`In short: ${it.action==='Final decision'?'a final vote by this body':'advice only, with no vote'} on ${it.title.charAt(0).toLowerCase()+it.title.slice(1)}.`;
+// AI summary slot. The text stays a placeholder until a facilitator fills it in during a session.
+const AI_PLACEHOLDER='A short, plain-language summary will appear here.';
 const BODY_PLAIN={
   bos:'The Board of Supervisors is the county\'s governing body. Five elected supervisors set county policy, approve the county budget, and oversee county services.',
   sdcc:'The City Council is the city\'s lawmaking body. Nine elected council members, one for each district, vote on city laws, the city budget, and many local projects.',
   'cpg-uptown':'A community planning group is a recognized neighborhood group. It advises the City on land use, building projects, and neighborhood issues. It does not make the final decision; the City Council and other bodies do.'
 };
-// AI summary as its own section. Feedback posts to the discussion board for this meeting or item.
-const aiSection=({text,boardKey,title,id})=>`<details class="card ai-fold">
-  <summary><span class="zone-label">AI summary · sample</span> What this says, in short</summary>
-  <p>${esc(text)}</p>
-  <p class="muted small">Sample text for this prototype. It was not generated from the agenda. Check the official record before relying on it.</p>
+// AI summary as an always-visible card. The slot shows placeholder text until a facilitator fills it in.
+// Feedback posts to the discussion board for this meeting or item.
+const aiSection=({boardKey,title,id})=>{
+  const typed=(state.drafts['ai:'+id]||'').trim();
+  return `<section class="card zone-ai ai-card">
+  <p class="zone-label">AI-generated — sample</p>
+  <h2>AI summary</h2>
+  <p class="ai-slot ${typed?'':'muted'}" data-ai-slot="${esc(id)}">${esc(typed||AI_PLACEHOLDER)}</p>
+  <details class="flag"><summary>Facilitator: fill in this summary</summary>
+    <div class="prompt-body">
+      <label for="ai-in-${esc(id)}">Summary text (sample)</label>
+      <textarea id="ai-in-${esc(id)}" rows="3" data-draft="ai:${esc(id)}">${esc(state.drafts['ai:'+id]||'')}</textarea>
+      <p class="muted small">The card above updates as you type. Sample text, not generated from the agenda.</p>
+    </div>
+  </details>
   <details class="flag"><summary>Report an error or comment on this summary</summary>
     <div class="prompt-body">
       <label for="aifb-${esc(id)}">What is wrong or missing?</label>
@@ -22,9 +31,11 @@ const aiSection=({text,boardKey,title,id})=>`<details class="card ai-fold">
       <p class="muted small">Your note is posted as a question on the board, so others can answer it.</p>
     </div>
   </details>
-</details>`;
-const TITLES={feed:'Feed',profile:'Profile',bodies:'Bodies',body:'Public body',meetings:'Meetings',meeting:'Meeting',boards:'Discussions',allboards:'All discussion boards',board:'Discussion board',thread:'Thread',item:'Agenda item',explain:'Write an explanation',favorites:'Favorites'};
-const NAV_ON={feed:'feed',profile:'',bodies:'bodies',body:'bodies',meetings:'meetings',meeting:'meetings',boards:'boards',allboards:'boards',board:'boards',thread:'boards',item:'meetings',favorites:'favorites'};
+  <p class="muted small">Check the official record before relying on any summary.</p>
+</section>`;
+};
+const TITLES={start:'Get started',find:'Find my districts',feed:'Feed',profile:'Profile',bodies:'Bodies',body:'Public body',meetings:'Meetings',meeting:'Meeting',boards:'Discussions',allboards:'All discussion boards',board:'Discussion board',thread:'Thread',item:'Agenda item',explain:'Write an explanation',favorites:'Favorites'};
+const NAV_ON={start:'',find:'find',feed:'feed',profile:'',bodies:'bodies',body:'bodies',meetings:'meetings',meeting:'meetings',boards:'boards',allboards:'boards',board:'boards',thread:'boards',item:'meetings',favorites:'favorites'};
 
 const state={screen:'signin',user:'',error:'',addr:null,page:'meetings',navOpen:true,toggles:{fed:true,county:true,city:true,school:true,cpg:true},
   bodyId:null,meetingId:null,boardKey:null,threadId:null,query:'',boardQuery:'',drafts:{},saved:{},seq:100,
@@ -194,7 +205,8 @@ function feedDiscussionCard(k){
     </div></article>`;
 }
 
-const starBtn=k=>{const on=isSaved(k);const l=on?'Remove from favorites':'Save to favorites';return `<button class="star ${on?'on':''}" data-act="save" data-key="${esc(k)}" aria-pressed="${on}" aria-label="${l}" title="${l}">${on?'★':'☆'}</button>`;};
+// Stars carry a visible word, so nothing reads as a bare symbol.
+const starBtn=k=>{const on=isSaved(k);const l=on?'Saved. Remove from favorites':'Save to favorites';return `<button class="star ${on?'on':''}" data-act="save" data-key="${esc(k)}" aria-pressed="${on}" aria-label="${l}" title="${l}">${on?'★ Saved':'☆ Save'}</button>`;};
 const starItemBtn=id=>starBtn('item:'+id);
 const starMeetBtn=id=>starBtn('meet:'+id);
 const starBoardBtn=k=>starBtn(k);
@@ -205,11 +217,12 @@ const starBoardBtn=k=>starBtn(k);
 const legendHtml=()=>`<div class="legend" aria-label="Color key"><span class="tag up">Upcoming</span><span class="tag ok">Passed or result</span><span class="tag final">Final vote</span><span class="tag adv">Advice only</span><span class="tag exp">Explanation</span><span class="tag">Comment</span></div>`;
 
 function viewFeed(){
-  if(!state.addr) return `<section class="card"><h1>Welcome, ${esc(state.user)}</h1><p class="muted">Find your districts first. Your feed shows meetings and decisions for the bodies that represent you.</p><div class="bar"><button data-act="page" data-id="profile">Set your address</button></div></section>`;
+  const intro='<p class="feed-key muted">Timeline of what’s coming up and what was just decided for the bodies you follow.</p>';
+  if(!state.addr) return `${intro}<section class="card"><h1>Welcome, ${esc(state.user)}</h1><p class="muted">Set your address first. Your feed shows meetings and decisions for the bodies that represent you.</p><div class="bar"><button data-act="page" data-id="find">Set your address</button></div></section>`;
   const ms=feedMeetings();
   const up=ms.filter(m=>!isPast(m)).sort(byAsc).slice(0,3);
   const decisions=ms.filter(isPast).sort(byDesc).flatMap(m=>m.items.filter(i=>i.result).map(i=>({m,i}))).slice(0,2);
-  return `
+  return `${intro}
     <section class="card"><h2>Coming up</h2>${up.length?up.map(feedMeetingCard).join(''):'<p class="muted">No upcoming meetings for what you saved. <button class="linkish" data-act="page" data-id="meetings">Browse meetings</button></p>'}</section>
     <section class="card"><h2>Recent decisions</h2>${decisions.length?decisions.map(({m,i})=>feedDecisionCard(m,i)).join(''):'<p class="muted">No recent decisions for what you saved yet.</p>'}</section>`;
 }
@@ -232,7 +245,7 @@ function viewFavorites(){
       <button class="linkish" data-act="meeting" data-id="${m.id}">${esc(m.title)}</button>
       <p class="tags"><span class="tag ${isPast(m)?'prev':'up'}">${isPast(m)?'Previous':'Upcoming'}</span></p></div>
       <div class="fav-act"><button data-act="meeting" data-id="${m.id}">Open meeting</button>${starMeetBtn(m.id)}</div></div>`).join('');
-  return `<section class="card"><h1>Favorites</h1><p class="muted">Everything you star is kept here: discussions to follow, agenda items to review, and meetings to attend.</p>${state.saveNotice?`<p class="err">${esc(state.saveNotice)}</p>`:''}</section>
+  return `<section class="card"><h1>Favorites</h1><p class="feed-key muted">The meetings, items, and threads you’ve starred.</p>${state.saveNotice?`<p class="err">${esc(state.saveNotice)}</p>`:''}</section>
     <section class="card zone-community"><p class="zone-label">Residents</p><h2>Discussions</h2>${boardRows||'<p class="muted">No saved discussions yet. Open a board and tap the star.</p>'}</section>
     <section class="card zone-official"><p class="zone-label">Official record</p><h2>Agenda items</h2>${itemRows||'<p class="muted">No saved agenda items yet. Open an item and tap the star.</p>'}</section>
     <section class="card zone-official"><p class="zone-label">Official record</p><h2>Meetings</h2>${meetRows||'<p class="muted">No saved meetings yet. Tap the star on a meeting to keep it here.</p>'}</section>`;
@@ -246,6 +259,16 @@ function viewFind(){
     <label for="q" class="small">Address</label>
     <input id="q" placeholder="Type a San Diego address" value="${esc(state.query)}" autocomplete="off">
     <div id="results" style="margin-top:10px">${findResults()}</div></div>`;
+}
+// Landing page for a new person: one card, one button. It opens the address picker directly.
+function viewStart(){
+  return `<section class="card start-card"><h1>Get started</h1>
+    <p>Enter your San Diego address. Civic Lens shows the bodies and districts that represent you, their next meetings, and their discussion boards.</p>
+    <div class="bar"><button data-act="page" data-id="find">Set your address</button></div>
+    <p class="muted small">Prototype: only sample addresses match. Your address is not stored, only the districts you choose.</p></section>`;
+}
+function viewFindPage(){
+  return `<section class="card"><h1>Find my districts</h1><p class="muted">Pick a sample address to see your bodies, districts, and discussion boards.</p></section>${viewFind()}`;
 }
 function findResults(){
   const q=state.query.trim().toLowerCase();
@@ -353,7 +376,22 @@ const canPost=k=>{
   const body=t==='body'?id:bodyOfKey(k);
   return !!body && Object.values(state.addr.d).some(p=>DIST[p].body===body);
 };
-const joinTag=k=>canPost(k)?'<span class="tag ok">In your district: you can post</span>':'<span class="tag">Read only</span>';
+// Which of the person's districts covers this board. Used in the gate chip text.
+const districtName=p=>{const m=/(District \w+|Area \w+)/.exec(DIST[p].label);return m?m[1]:DIST[p].label;};
+function yourDistrictFor(k){
+  if(!state.addr) return null;
+  const [t,id]=splitKey(k);
+  const mineIds=Object.values(state.addr.d).filter(p=>DIST[p]);
+  if(t==='place') return mine(id)?id:null;
+  if(t==='topic') return mineIds.find(p=>p.startsWith('sdcc-'))||mineIds[0]||null;
+  const body=t==='body'?id:bodyOfKey(k);
+  return mineIds.find(p=>DIST[p].body===body)||null;
+}
+// Green chip where the person can post; gray chip where they can only read.
+const joinTag=k=>{
+  if(canPost(k)){const p=yourDistrictFor(k);return `<span class="gate ok">You can post here — you live in ${esc(p?districtName(p):'your district')}.</span>`;}
+  return `<span class="gate">${state.addr?'Read only — outside your district.':'Read only — set your address to post.'}</span>`;
+};
 function districtSection(p){
   const d=DIST[p], yours=mine(p), key='place:'+p;
   const role=d.note?d.note.replace(/\.$/,''):'';
@@ -401,20 +439,20 @@ function discussionPanelHtml(key,{threads:given=null,meetingId=null,note='',star
   const open=state.panelOpen, post=canPost(key);
   const threads=(given||boardFor(key).threads).slice().sort((x,y)=>threadLast(y).localeCompare(threadLast(x)));
   const addBtn=!post?'':state.composing
-    ? '<button class="round-add" data-act="compose" aria-label="Cancel" title="Cancel">×</button>'
+    ? '<button class="ghost addbtn" data-act="compose">Cancel</button>'
     : meetingId
-      ? `<button class="round-add" data-act="meetthread" data-id="${esc(meetingId)}" aria-label="${esc(startLabel)}" title="${esc(startLabel)}">+</button>`
-      : `<button class="round-add" data-act="compose" aria-label="${esc(startLabel)}" title="${esc(startLabel)}">+</button>`;
+      ? `<button class="ghost addbtn" data-act="meetthread" data-id="${esc(meetingId)}">+ ${esc(startLabel)}</button>`
+      : `<button class="ghost addbtn" data-act="compose">+ ${esc(startLabel)}</button>`;
   const composer=state.composing&&post?`<div class="composer">${threadFormHtml(key,{...formOpts,inline:true})}</div>`:'';
   const list=threads.length?threads.map(t=>threadRowHtml(key,t)).join(''):'<p class="muted small">No threads yet.</p>';
   return `<aside class="disc-panel ${open?'':'collapsed'}" aria-label="Discussion">
     <div class="panel-head">
-      <button class="arrow-btn" data-act="panel" aria-expanded="${open}" aria-controls="disc-body" aria-label="${open?'Collapse':'Expand'} discussion" title="${open?'Collapse':'Expand'} discussion">${open?'›':'‹'}</button>
-      ${open?`<h3 class="panel-title">Discussion <span class="muted small">${threads.length}</span></h3>${addBtn}`:''}
+      <button class="ghost panel-toggle" data-act="panel" aria-expanded="${open}" aria-controls="disc-body">${open?'Hide discussion <span aria-hidden="true">›</span>':'<span aria-hidden="true">‹</span> Show discussion'}</button>
+      ${open?`<h3 class="panel-title">Discussion (${threads.length})</h3>${addBtn}`:''}
     </div>
     <div id="disc-body" class="panel-body" ${open?'':'hidden'}>
       ${note?`<p class="muted small">${esc(note)}</p>`:''}
-      ${post?'':'<p class="muted small">Only people in districts this body covers can post. You can read and follow it.</p>'}
+      ${joinTag(key)}
       ${composer}
       ${list}
       <p class="panel-foot"><button class="linkish" data-act="board" data-key="${esc(key)}">Open board</button> ${starBtn(key)}</p>
@@ -459,13 +497,16 @@ function viewBody(){
   </div>`;
 }
 
+// Dismissible tester hint. Dismissal is kept on this device.
+const bannerHtml=()=>{try{if(localStorage.getItem('civic.banner')==='hidden')return '';}catch(e){}return `<div class="banner" role="note"><p><b>Testing Civic Lens?</b> Try: set your address, open the Dec 1 City Council meeting, read an item, and start or join a thread.</p><button class="ghost" data-act="dismiss">Dismiss</button></div>`;};
 function viewMeetings(){
-  if(!state.addr) return `<div class="card"><p class="muted">Set your address on Find my districts to see meetings for your bodies.</p></div>`;
+  const banner=bannerHtml();
+  if(!state.addr) return `${banner}<div class="card"><p class="muted">Set your address to see meetings for your bodies.</p><div class="bar"><button data-act="page" data-id="find">Set your address</button></div></div>`;
   const ms=scopedMeetings();
   if(!ms.length) return `<div class="card"><p class="muted">Turn on at least one district in the sidebar to see meetings.</p></div>`;
   const up=ms.filter(m=>!isPast(m)).sort(byAsc);
   const prev=ms.filter(isPast).sort(byDesc);
-  return `<div class="card"><h2>Upcoming</h2>${listMeetings(up)||'<p class="muted">No upcoming meetings.</p>'}</div>
+  return `${banner}<div class="card"><h2>Upcoming</h2>${listMeetings(up)||'<p class="muted">No upcoming meetings.</p>'}</div>
     <div class="card"><h2>Previous</h2>${listMeetings(prev)||'<p class="muted">No previous meetings.</p>'}</div>`;
 }
 
@@ -502,7 +543,7 @@ function viewMeeting(){
       <p class="small"><b>What this body is:</b> ${esc(BODY_PLAIN[m.body]||'')}</p>
       <div class="bar">${addControls(m)}</div>
     </section>
-    ${aiSection({text:aiMeeting(m),boardKey:'body:'+m.body,title:fmtShort(m.date)+' meeting: AI summary feedback',id:'meet-'+m.id})}
+    ${aiSection({boardKey:'body:'+m.body,title:fmtShort(m.date)+' meeting: AI summary feedback',id:'meet-'+m.id})}
     <section class="card zone-official"><p class="zone-label">Official record</p><h2>Summary</h2><p>${esc(overview)}</p>
       <p class="small"><b>Final vote</b> means this body makes the decision. <b>Advice only</b> means this body recommends, and another body decides.</p>
       <p class="muted small">${m.source?`Source: <a href="${esc(m.source)}" target="_blank" rel="noopener">City Clerk meetings calendar</a>, checked ${esc(m.checked||'')}. Verify before relying on it.`:'Sample schedule and agenda for this prototype. Not from an official source.'}</p></section>
@@ -606,14 +647,19 @@ function viewItem(){
   const ex=threads.filter(x=>x.kind==='information'), com=threads.filter(x=>x.kind!=='information');
   const canWrite=canPost(k);
   const exList=ex.length?ex.map(x=>`<details class="ex">
-      <summary><span class="tag exp">Explanation</span> ${esc(x.title)} <span class="muted small">· ${esc(x.posts[0]?.who||'')}, ${esc(fmtShort(x.posts[0]?.t||''))}</span></summary>
+      <summary><span class="type-chip t-exp">Explanation</span> ${esc(x.title)} <span class="muted small">· ${esc(x.posts[0]?.who||'')}, ${esc(fmtShort(x.posts[0]?.t||''))}</span></summary>
       <div class="ex-body">${x.posts.map(p=>`<div class="pre">${esc(p.text)}</div>`).join('')}
-        <p class="muted small">Replies to an explanation stay in its thread.</p>
+        <p class="small"><span class="type-chip t-com">Comment</span> ${Math.max(0,x.posts.length-1)} under this explanation. Reply in its thread.</p>
         <button class="ghost" data-act="thread" data-key="${esc(k)}" data-id="${x.id}">Open thread and reply</button></div></details>`).join('')
     :'<p class="muted">No explanations yet.</p>';
   const comList=com.length?com.map(x=>`<div class="brow"><div class="brow-main">${kindTag('discussion')}<button class="linkish" data-act="thread" data-key="${esc(k)}" data-id="${x.id}">${esc(x.title)}</button>
       <div class="muted small">${esc(KIND_LABEL[x.kind])} · ${x.posts.length} post${x.posts.length===1?'':'s'} · last post ${esc(fmtShort(threadLast(x)))}</div></div></div>`).join('')
     :'<p class="muted">No comments yet.</p>';
+  // The three kinds of resident contribution, taught where the residents' section starts.
+  const typeKey=`<ul class="type-key" aria-label="Kinds of resident contribution">
+      <li><span class="type-chip t-exp">Explanation</span> A plain-language rewrite of the item, linked to the official text.</li>
+      <li><span class="type-chip t-com">Comment</span> A short reaction under an explanation.</li>
+      <li><span class="type-chip t-thr">Thread</span> A question or opinion to discuss with neighbors.</li></ul>`;
   const kindNow=state.drafts['newkind:'+k]||'question';
   const explainBlock=canWrite
     ? `<div class="bar"><button data-act="explain" data-id="${it.id}">Write an explanation</button></div>`
@@ -631,7 +677,7 @@ function viewItem(){
       <p class="tags"><span class="tag ${final?'final':'adv'}">${final?'Final vote':'Advice only'}</span>${past?(it.result?`<span class="tag ok">Passed or result: ${esc(it.result)}</span>`:''):'<span class="tag up">Upcoming</span>'}</p>
       <div class="bar">${starItemBtn(it.id)}</div>
     </section>
-    ${aiSection({text:aiItem(it),boardKey:'item:'+it.id,title:'AI summary feedback: '+it.title,id:'item-'+it.id})}
+    ${aiSection({boardKey:'item:'+it.id,title:'AI summary feedback: '+it.title,id:'item-'+it.id})}
     <section class="card zone-official"><p class="zone-label">Official record</p><h2>Summary</h2>
       <p><b>${past?'What it did':'What it could do'}:</b> ${esc(it.stakes)}</p>
       <p class="small muted">Official summary: ${esc(it.summary)}</p>
@@ -639,6 +685,7 @@ function viewItem(){
       <p class="muted small">Written by hand for this prototype. This is not AI and not an official summary. Check the agenda item.</p></section>
     <section class="card zone-community"><p class="zone-label">Residents</p><h2>Explanations</h2>
       <p class="muted small">Residents' plain-language explanations. Each one links to its official source.</p>
+      ${typeKey}
       ${exList}
       ${explainBlock}</section>
     </div>${discussionPanelHtml(k,{threads:com,startLabel:'Start a comment',note:'Questions and opinions about this item. Explanations are on the left.',formOpts:{heading:'Start a comment',submit:'Post comment',kinds:COMMENT_KINDS}})}
@@ -702,7 +749,7 @@ function viewThread(){
 /* ---------- shell ---------- */
 function sidebarBody(){
   const item=(id,label,icon)=>`<button class="navbtn ${NAV_ON[state.page]===id?'on':''}" data-act="page" data-id="${id}" ${NAV_ON[state.page]===id?'aria-current="page"':''}>${svgIcon(icon)}<span>${label}</span></button>`;
-  const nav=`<div class="navgroup"><div class="navhead">Home</div>${item('meetings','Meetings','calendar')}${item('feed','Feed','feed')}${item('favorites','Favorites','star')}</div>
+  const nav=`<div class="navgroup"><div class="navhead">Home</div>${item('find','Find my districts','pin')}${item('meetings','Meetings','calendar')}${item('feed','Feed','feed')}${item('favorites','Favorites','star')}</div>
     
     <div class="navgroup"><div class="navhead">Government</div>${item('bodies','Bodies','building')}</div>
     <div class="navgroup"><div class="navhead">Talk</div>${item('boards','Discussions','chat')}</div>`;
@@ -711,7 +758,7 @@ function sidebarBody(){
 }
 
 function viewApp(){
-  const pages={feed:viewFeed,profile:viewProfile,bodies:viewBodies,body:viewBody,meetings:viewMeetings,meeting:viewMeeting,boards:viewBoards,allboards:viewAllBoards,board:viewBoard,thread:viewThread,item:viewItem,explain:viewExplain,favorites:viewFavorites};
+  const pages={start:viewStart,find:viewFindPage,feed:viewFeed,profile:viewProfile,bodies:viewBodies,body:viewBody,meetings:viewMeetings,meeting:viewMeeting,boards:viewBoards,allboards:viewAllBoards,board:viewBoard,thread:viewThread,item:viewItem,explain:viewExplain,favorites:viewFavorites};
   const sub=state.page==='board'||state.page==='thread'?(boardInfo(state.boardKey).title):'';
   return `<div class="shell ${state.navOpen?'':'closed'}">
     <aside class="side" aria-label="Main navigation">${sidebarBody()}</aside>
@@ -736,7 +783,7 @@ async function signin(){
   if(!name){state.error='Enter a nickname to continue.';render();return;}
   try{
     if(!state.me) state.me=await dbCreateProfile(name);
-    state.user=state.me.nickname; state.error=''; state.screen='app'; state.page='meetings';
+    state.user=state.me.nickname; state.error=''; state.screen='app'; state.page=state.addr?'meetings':'start';
     await reloadBoards();
   }catch(e){ state.error=e.message; }
   render();
@@ -842,6 +889,7 @@ async function boot(){
       state.user=state.me.nickname; state.screen='app';
       let saved=null; try{ saved=localStorage.getItem('civic.addr'); }catch(e){}
       state.addr=ADDRESSES.find(a=>a.id===saved)||null;
+      if(!state.addr) state.page='start';
       await loadSaved();
     }
     await reloadBoards();
@@ -858,6 +906,7 @@ document.addEventListener('click',e=>{
   const act=t.dataset.act, id=t.dataset.id, key=t.dataset.key;
   if(act==='signin') return signin();
   if(act==='nav'){state.navOpen=!state.navOpen;return render();}
+  if(act==='dismiss'){try{localStorage.setItem('civic.banner','hidden');}catch(e){}return render();}
   if(act==='choose') return chooseAddress(id);
   if(act==='signout') return signOutApp();
   if(act==='page') return go(id,{meetingId:null,boardKey:null,threadId:null});
@@ -904,6 +953,12 @@ document.addEventListener('input',e=>{
   if(e.target.id==='q'){state.query=e.target.value;const r=document.getElementById('results');if(r) r.innerHTML=findResults();}
   if(e.target.id==='bq'){state.boardQuery=e.target.value;const r=document.getElementById('board-list');if(r) r.innerHTML=boardsHtml();}
   if(e.target.id==='bodyq'){state.bodyQuery=e.target.value;const r=document.getElementById('body-list');if(r) r.innerHTML=bodyListHtml();}
+  // Live AI summary: the facilitator's text replaces the placeholder as they type.
+  if(e.target.dataset.draft&&e.target.dataset.draft.startsWith('ai:')){
+    const id=e.target.dataset.draft.slice(3); state.drafts[e.target.dataset.draft]=e.target.value;
+    const el=document.querySelector(`[data-ai-slot="${id}"]`);
+    if(el){const v=e.target.value.trim(); el.textContent=v||AI_PLACEHOLDER; el.classList.toggle('muted',!v);}
+  }
   if(e.target.dataset.draft) state.drafts[e.target.dataset.draft]=e.target.value;
 });
 document.addEventListener('change',e=>{

@@ -166,7 +166,7 @@ details.ex{border-left:3px solid #d9868c;padding-left:12px;margin:8px 0}
 @media(max-width:760px){.fav-row{flex-direction:column}.fav-act{justify-content:flex-start}}
 
 /* Favorite star: icon only, with an accessible label on the button */
-button.star{min-width:40px;min-height:40px;padding:0 8px;font-size:20px;line-height:1;background:#fff;color:var(--navy);border:1px solid #8b95aa}
+button.star{min-height:44px;padding:0 12px;font-size:15px;line-height:1.2;background:#fff;color:var(--navy);border:1px solid #8b95aa}
 button.star:hover{background:var(--soft);border-color:var(--navy)}
 button.star.on{background:var(--navy);color:#fff;border-color:var(--navy)}
 
@@ -178,7 +178,7 @@ button.star.on{background:var(--navy);color:#fff;border-color:var(--navy)}
 .k-discussion{background:#fbe5e7;color:#8a1c22}
 .k-yours{background:#1f3f86;color:#fff}
 .k-other{background:#eceef2;color:#4d5567;box-shadow:inset 0 0 0 1px #8b95aa}
-button{min-height:40px;font-size:16px}
+button{min-height:44px;font-size:16px}
 
 /* Sample AI summary: a grey box with a navy rule, labelled as a sample */
 .ai-wrap{margin-top:14px}
@@ -233,7 +233,7 @@ details.flag summary{cursor:pointer;color:var(--navy);font-weight:600;padding:6p
 .bodies-tools label{flex-basis:100%;margin:0}
 .bodies-tools input{flex:1 1 240px;min-width:0}
 .chips{display:flex;flex-wrap:wrap;gap:6px}
-.chip{min-height:36px;padding:4px 12px;border-radius:999px;background:#fff;color:var(--navy);border:1px solid #8b95aa;font:inherit;font-size:14px;cursor:pointer}
+.chip{min-height:44px;padding:4px 12px;border-radius:999px;background:#fff;color:var(--navy);border:1px solid #8b95aa;font:inherit;font-size:14px;cursor:pointer}
 .chip:hover{background:var(--soft)}
 .chip[aria-pressed="true"]{background:var(--navy);color:#fff;border-color:var(--navy)}
 .chip:disabled{opacity:.5;cursor:not-allowed}
@@ -307,3 +307,44 @@ details.fold>summary h2{display:inline;font-size:18px}
 .reply-box{margin-top:10px}
 .reply-box textarea{width:100%}
 .panel-foot{margin-top:14px}
+.addbtn{min-height:44px}
+.panel-toggle{min-height:44px}
+
+/* Resident contribution types: each has its own label and colored stripe, matched by the key on the page */
+.type-key{list-style:none;margin:0 0 16px;padding:0;display:grid;gap:8px;font-size:15px}
+.type-key li{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+.type-chip{display:inline-block;font-size:13px;font-weight:700;line-height:1.4;padding:1px 8px;border-radius:4px;white-space:nowrap}
+.t-exp{background:#fbe5e7;color:#8a1c22;box-shadow:inset 3px 0 0 #b3262e}
+.t-com{background:#eceef2;color:#2d3446;box-shadow:inset 3px 0 0 #8b95aa}
+.t-thr{background:#e3ebfa;color:#1f3f86;box-shadow:inset 3px 0 0 #1f3f86}
+
+/* Gate chips: green where you can post, gray where you can only read */
+.gate{display:inline-block;font-size:14px;font-weight:600;line-height:1.4;padding:4px 10px;border-radius:6px;background:#eceef2;color:#4d5567;box-shadow:inset 0 0 0 1px #8b95aa;margin:0 0 10px}
+.gate.ok{background:var(--ok-bg);color:var(--ok);box-shadow:inset 0 0 0 1px #6fae8a}
+
+/* Tester hint on the meetings page */
+.banner{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center;justify-content:space-between;padding:12px 14px;margin:0 0 22px;background:#fff8e6;border-left:4px solid #c98a00;border-radius:6px}
+.banner p{margin:0;flex:1 1 320px;font-size:15px}
+
+/* Landing page for a new person */
+.start-card{padding:24px 0 0}
+
+/* AI summary: always visible, placeholder until filled in */
+.ai-card .ai-slot{font-size:17px;background:#fff;border-radius:6px;padding:10px 12px;margin:6px 0 12px;min-height:3em}
+.ai-slot.muted{font-style:italic;color:var(--mute)}
+
+/* Phones: single column, tap targets at least 44px */
+@media(max-width:640px){
+  .wrap{padding:18px 14px 36px}
+  header{padding:10px 14px}
+  .dcards{grid-template-columns:1fr}
+  .mrow{grid-template-columns:1fr}
+  .dist-row{flex-direction:column}
+  .fav-act,.brow-act{justify-content:flex-start}
+  .chips{gap:8px}
+  .navbtn,.drawer-close,.arrow-btn,.chip,button,.panel-toggle{min-height:44px}
+  button.linkish{display:inline-flex;align-items:center}
+  details summary{min-height:44px;display:flex;align-items:center}
+  input,textarea,select{font-size:16px}
+  .banner{flex-direction:column;align-items:stretch}
+}
