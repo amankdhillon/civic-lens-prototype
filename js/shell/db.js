@@ -82,3 +82,19 @@ async function dbPostReply({ userId, threadId, body }) {
 async function dbSignOut() {
   await db.auth.signOut();
 }
+
+// Favorites: one row per saved key (for example body:bos or item:it-1110-2), owned by the signed-in person.
+async function dbLoadSaved(userId) {
+  const { data, error } = await db.from('saved_items').select('key').eq('user_id', userId);
+  if (error) dbFail(error);
+  return (data ?? []).map(r => r.key);
+}
+async function dbSetSaved(userId, key, on) {
+  if (on) {
+    const { error } = await db.from('saved_items').upsert({ user_id: userId, key }, { onConflict: 'user_id,key', ignoreDuplicates: true });
+    if (error) dbFail(error);
+  } else {
+    const { error } = await db.from('saved_items').delete().eq('user_id', userId).eq('key', key);
+    if (error) dbFail(error);
+  }
+}

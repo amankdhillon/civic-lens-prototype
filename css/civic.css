@@ -264,3 +264,11 @@ details.flag summary{cursor:pointer;color:var(--navy);font-weight:600;padding:6p
   .body-layout.collapsed .panel-toggle{writing-mode:horizontal-tb;width:100%;justify-content:space-between}
   .bcard-head{flex-direction:column}
 }
+
+/* Feedback line and folded sections */
+#status{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--navy);color:#fff;padding:10px 16px;border-radius:999px;font-size:15px;box-shadow:0 6px 20px rgba(0,0,0,.25);z-index:20;max-width:90vw}
+#status:empty{display:none}
+.ai-fold>summary,.more>summary{cursor:pointer;font-weight:700;color:var(--navy);padding:6px 0}
+.ai-fold>summary .zone-label{margin-right:8px}
+.more{margin-top:12px}
+.composer{margin-top:12px;padding:14px;background:var(--soft);border-radius:8px}

@@ -10,9 +10,8 @@ const BODY_PLAIN={
   'cpg-uptown':'A community planning group is a recognized neighborhood group. It advises the City on land use, building projects, and neighborhood issues. It does not make the final decision; the City Council and other bodies do.'
 };
 // AI summary as its own section. Feedback posts to the discussion board for this meeting or item.
-const aiSection=({text,boardKey,title,id})=>`<section class="card zone-ai" aria-labelledby="ai-${esc(id)}">
-  <p class="zone-label">AI summary · sample</p>
-  <h2 id="ai-${esc(id)}">What this says, in short</h2>
+const aiSection=({text,boardKey,title,id})=>`<details class="card ai-fold">
+  <summary><span class="zone-label">AI summary · sample</span> What this says, in short</summary>
   <p>${esc(text)}</p>
   <p class="muted small">Sample text for this prototype. It was not generated from the agenda. Check the official record before relying on it.</p>
   <details class="flag"><summary>Report an error or comment on this summary</summary>
@@ -23,13 +22,13 @@ const aiSection=({text,boardKey,title,id})=>`<section class="card zone-ai" aria-
       <p class="muted small">Your note is posted as a question on the board, so others can answer it.</p>
     </div>
   </details>
-</section>`;
+</details>`;
 const TITLES={feed:'Feed',profile:'Profile',bodies:'Bodies',body:'Public body',meetings:'Meetings',meeting:'Meeting',boards:'Discussions',allboards:'All discussion boards',board:'Discussion board',thread:'Thread',item:'Agenda item',explain:'Write an explanation',favorites:'Favorites'};
 const NAV_ON={feed:'feed',profile:'',bodies:'bodies',body:'bodies',meetings:'meetings',meeting:'meetings',boards:'boards',allboards:'boards',board:'boards',thread:'boards',item:'meetings',favorites:'favorites'};
 
 const state={screen:'signin',user:'',error:'',addr:null,page:'meetings',navOpen:true,toggles:{fed:true,county:true,city:true,school:true,cpg:true},
   bodyId:null,meetingId:null,boardKey:null,threadId:null,query:'',boardQuery:'',drafts:{},saved:{},seq:100,
-  menuFor:null,itemId:null,customEx:{},aiOpen:{},remote:{threads:[],posts:[]},me:null,ready:false,postError:'',composing:false,panelOpen:true,bodyLevel:'all',bodyQuery:'',bodyMineOnly:false,bodyOpen:{}};
+  menuFor:null,itemId:null,customEx:{},aiOpen:{},remote:{threads:[],posts:[]},me:null,ready:false,postError:'',composing:false,panelOpen:true,bodyLevel:'all',bodyQuery:'',bodyMineOnly:false,bodyOpen:{},saveNotice:''};
 
 /* ---------- helpers ---------- */
 const fmtDate=d=>new Date(d+'T12:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'});
@@ -112,7 +111,7 @@ function viewSignin(){
     <div class="err" role="alert">${esc(state.error)}</div><div style="margin-top:6px"><button data-act="signin">Continue</button></div></div></div>`;
 }
 
-const knownKey=k=>{const [t,id]=splitKey(k);if(t==='topic')return TOPICS.some(x=>x.id===id);if(t==='body')return !!BODIES[id];if(t==='place')return !!DIST[id];if(t==='meet')return !!findMeeting(id);return false;};
+const knownKey=k=>{const [t,id]=splitKey(k);if(t==='topic')return TOPICS.some(x=>x.id===id);if(t==='body')return !!BODIES[id];if(t==='place')return !!DIST[id];if(t==='meet')return !!findMeeting(id);if(t==='item')return !!findItem(id);return false;};
 const kindLabel=b=>b.label||(b.kind==='committee'?'Subcommittee':b.kind==='board'?'Board or commission':'Governing body');
 const ICON={
   feed:'<path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',
@@ -210,7 +209,7 @@ function viewFeed(){
   const ms=feedMeetings();
   const up=ms.filter(m=>!isPast(m)).sort(byAsc).slice(0,3);
   const decisions=ms.filter(isPast).sort(byDesc).flatMap(m=>m.items.filter(i=>i.result).map(i=>({m,i}))).slice(0,2);
-  return `${legendHtml()}
+  return `
     <section class="card"><h2>Coming up</h2>${up.length?up.map(feedMeetingCard).join(''):'<p class="muted">No upcoming meetings for what you saved. <button class="linkish" data-act="page" data-id="meetings">Browse meetings</button></p>'}</section>
     <section class="card"><h2>Recent decisions</h2>${decisions.length?decisions.map(({m,i})=>feedDecisionCard(m,i)).join(''):'<p class="muted">No recent decisions for what you saved yet.</p>'}</section>`;
 }
@@ -233,7 +232,7 @@ function viewFavorites(){
       <button class="linkish" data-act="meeting" data-id="${m.id}">${esc(m.title)}</button>
       <p class="tags"><span class="tag ${isPast(m)?'prev':'up'}">${isPast(m)?'Previous':'Upcoming'}</span></p></div>
       <div class="fav-act"><button data-act="meeting" data-id="${m.id}">Open meeting</button>${starMeetBtn(m.id)}</div></div>`).join('');
-  return `<section class="card"><h1>Favorites</h1><p class="muted">Everything you star is kept here: discussions to follow, agenda items to review, and meetings to attend.</p></section>
+  return `<section class="card"><h1>Favorites</h1><p class="muted">Everything you star is kept here: discussions to follow, agenda items to review, and meetings to attend.</p>${state.saveNotice?`<p class="err">${esc(state.saveNotice)}</p>`:''}</section>
     <section class="card zone-community"><p class="zone-label">Residents</p><h2>Discussions</h2>${boardRows||'<p class="muted">No saved discussions yet. Open a board and tap the star.</p>'}</section>
     <section class="card zone-official"><p class="zone-label">Official record</p><h2>Agenda items</h2>${itemRows||'<p class="muted">No saved agenda items yet. Open an item and tap the star.</p>'}</section>
     <section class="card zone-official"><p class="zone-label">Official record</p><h2>Meetings</h2>${meetRows||'<p class="muted">No saved meetings yet. Tap the star on a meeting to keep it here.</p>'}</section>`;
@@ -346,17 +345,18 @@ function districtSection(p){
   </div>`;
 }
 // The new-thread form. It is hidden until someone presses Start a thread. Used on the board page and in the body panel.
-function threadFormHtml(k){
+const COMMENT_KINDS=[['question','Question'],['opinion','Opinion']];
+function threadFormHtml(k,{heading='Start a thread',submit='Post thread',kinds=KINDS,withErr=true}={}){
   const dt=state.drafts['newtitle:'+k]||'', db=state.drafts['newbody:'+k]||'', dk=state.drafts['newkind:'+k]||'question';
-  return `<h2>Start a thread</h2>
+  return `<h2>${esc(heading)}</h2>
       <label for="nt" class="small">Title</label>
       <input id="nt" data-draft="newtitle:${esc(k)}" value="${esc(dt)}" placeholder="What do you want to talk about?" autocomplete="off">
       <label for="nk" class="small" style="display:block;margin-top:8px">Type</label>
-      <select id="nk" data-draft="newkind:${esc(k)}">${KINDS.map(([v,l])=>`<option value="${v}" ${v===dk?'selected':''}>${esc(l)}</option>`).join('')}</select>
+      <select id="nk" data-draft="newkind:${esc(k)}">${kinds.map(([v,l])=>`<option value="${v}" ${v===dk?'selected':''}>${esc(l)}</option>`).join('')}</select>
       <label for="nb" class="small" style="display:block;margin-top:8px">Your post</label>
       <textarea id="nb" rows="3" data-draft="newbody:${esc(k)}">${esc(db)}</textarea>
-      <div class="err" id="newerr" role="alert"></div>
-      <div class="bar"><button data-act="newthread" data-key="${esc(k)}">Post thread</button><button class="ghost" data-act="compose">Cancel</button></div>`;
+      ${withErr?'<div class="err" id="newerr" role="alert"></div>':''}
+      <div class="bar"><button data-act="newthread" data-key="${esc(k)}">${esc(submit)}</button><button class="ghost" data-act="compose">Cancel</button></div>`;
 }
 // The body's discussion board, on the right of its page. It collapses to a slim tab.
 function discussionPanelHtml(key){
@@ -534,16 +534,20 @@ async function postEx(k){
 }
 
 // One collapsible row per prompt. Open a row to answer it. A row you leave empty is simply not answered.
+// Two questions show first. The rest are optional and sit under "More questions".
+const EX_FIRST=['change','source'];
 function exComposer(k){
-  const rows=EX_FIELDS.map(([f,label,help,req])=>{
+  const row=([f,label,help,req])=>{
     const v=(state.drafts[exKey(k,f)]||'').trim();
     const status=v?'<span class="tag ok">Answered</span>':(req?'<span class="tag no">Required</span>':'<span class="tag">Optional</span>');
-    return `<details class="prompt" ${v?'open':''}>
+    return `<details class="prompt" ${v||EX_FIRST.includes(f)?'open':''}>
       <summary><span>${esc(label)}</span>${status}</summary>
       <div class="prompt-body"><p class="muted small">${esc(help)}</p>
         <textarea rows="2" aria-label="${esc(label)}" data-draft="${esc(exKey(k,f))}">${esc(state.drafts[exKey(k,f)]||'')}</textarea>
         <div class="bar"><button class="ghost" data-act="exskip" data-key="${esc(k)}" data-id="${f}">Skip this question</button></div></div></details>`;
-  }).join('');
+  };
+  const first=EX_FIELDS.filter(([f])=>EX_FIRST.includes(f)).map(row).join('');
+  const more=EX_FIELDS.filter(([f])=>!EX_FIRST.includes(f)).map(row).join('');
   const mine=(state.customEx[k]||[]).map((c,i)=>`<div class="exq"><b>${esc(c.q)}</b><p class="small">${esc(c.a)}</p><button class="ghost" data-act="exdel" data-key="${esc(k)}" data-id="${i}">Remove</button></div>`).join('');
   const add=`<details class="prompt"><summary><span>Add your own question and answer</span><span class="tag">Optional</span></summary>
       <div class="prompt-body">
@@ -552,7 +556,7 @@ function exComposer(k){
         <label for="ca-${esc(k)}" style="display:block;margin-top:8px">Answer</label>
         <textarea id="ca-${esc(k)}" rows="2" data-draft="exca:${esc(k)}">${esc(state.drafts['exca:'+k]||'')}</textarea>
         <div class="bar"><button class="ghost" data-act="excadd" data-key="${esc(k)}">Add to explanation</button></div></div></details>`;
-  return rows+mine+add;
+  return first+`<details class="more"><summary>More questions (optional)</summary>${more}${mine}${add}</details>`;
 }
 
 function viewItem(){
@@ -576,10 +580,9 @@ function viewItem(){
     ? `<div class="bar"><button data-act="explain" data-id="${it.id}">Write an explanation</button></div>`
     : '<p class="muted small">Only people whose districts cover this item can write explanations. You can read them and follow the item.</p>';
   const commentBlock=canWrite
-    ? `<div class="exf"><label for="nt">Title</label><input id="nt" data-draft="newtitle:${esc(k)}" value="${esc(state.drafts['newtitle:'+k]||'')}" placeholder="Your question or comment" autocomplete="off"></div>
-       <div class="exf"><label for="nk">Type</label><select id="nk" data-draft="newkind:${esc(k)}">${[['question','Question'],['opinion','Opinion']].map(([v,l])=>`<option value="${v}" ${kindNow===v?'selected':''}>${l}</option>`).join('')}</select></div>
-       <div class="exf"><label for="nb">Comment</label><textarea id="nb" rows="3" data-draft="newbody:${esc(k)}">${esc(state.drafts['newbody:'+k]||'')}</textarea></div>
-       <div class="bar"><button class="ghost" data-act="newthread" data-key="${esc(k)}">Post comment</button></div>`
+    ? (state.composing
+        ? `<div class="composer">${threadFormHtml(k,{heading:'Start a comment',submit:'Post comment',kinds:COMMENT_KINDS,withErr:false})}</div>`
+        : '<div class="bar"><button data-act="compose">Start a comment</button></div>')
     : '';
   return `<div id="newerr" class="err" role="alert"></div>
     <section class="card">
@@ -602,7 +605,7 @@ function viewItem(){
     <section class="card zone-community"><p class="zone-label">Residents</p><h2>Comments</h2>
       <p class="muted small">Questions and opinions about this item.</p>
       ${comList}
-      <h3 style="margin-top:22px">Start a comment</h3>
+      
       ${commentBlock}</section>`;
 }
 
@@ -718,7 +721,7 @@ async function chooseAddress(id){
 async function signOutApp(){
   try{ await dbSignOut(); }catch(e){}
   try{ localStorage.removeItem('civic.addr'); localStorage.removeItem('civic.saved'); }catch(e){}
-  Object.assign(state,{screen:'signin',user:'',addr:null,error:'',page:'feed',me:null,saved:{},menuFor:null,remote:{threads:[],posts:[]}});
+  Object.assign(state,{screen:'signin',user:'',addr:null,error:'',page:'feed',me:null,saved:{},menuFor:null,remote:{threads:[],posts:[]},drafts:{},customEx:{},composing:false,saveNotice:''});
   render();
 }
 async function postNewThread(key){
@@ -760,6 +763,45 @@ function migrateSaved(){
   try{ localStorage.setItem('civic.saved',JSON.stringify(out)); }catch(e){}
   return out;
 }
+const SYNC_NOTE="Favorites are saved on this device only. Check your connection, or run supabase/migration-7.sql, to save them to your account.";
+// Favorites come from the account. This device's copy is the fallback, and is uploaded once when the account has none of it.
+async function loadSaved(){
+  let local={};
+  try{ local=JSON.parse(localStorage.getItem('civic.saved')||'null')||migrateSaved(); }catch(e){ local={}; }
+  try{
+    const remote=Object.fromEntries((await dbLoadSaved(state.me.id)).map(k=>[k,true]));
+    const missing=Object.keys(local).filter(k=>local[k]&&!remote[k]);
+    await Promise.all(missing.map(k=>dbSetSaved(state.me.id,k,true)));
+    state.saved={...remote,...Object.fromEntries(missing.map(k=>[k,true]))};
+    state.saveNotice='';
+  }catch(e){
+    state.saved=local;
+    state.saveNotice=SYNC_NOTE;
+  }
+  persist();
+}
+// A small confirmation that appears under the screen, so a press always shows that it worked.
+function flash(msg){
+  let el=document.getElementById('status');
+  if(!el){ el=document.createElement('div'); el.id='status'; el.setAttribute('role','status'); document.body.appendChild(el); }
+  el.textContent=msg;
+  clearTimeout(flash.t); flash.t=setTimeout(()=>{ el.textContent=''; },2600);
+}
+// Saves at once on screen, then to the account. If the account cannot be reached, the change stays on this device and says so.
+async function toggleSave(key){
+  if(!state.me) return;
+  const on=!state.saved[key];
+  if(on) state.saved[key]=true; else delete state.saved[key];
+  persist(); render();
+  try{
+    await dbSetSaved(state.me.id,key,on);
+    flash(on?'Saved to your favorites.':'Removed from your favorites.');
+  }catch(e){
+    state.saveNotice=SYNC_NOTE; render();
+    flash(on?'Saved on this device only. It did not reach your account.':'Removed on this device only. It did not reach your account.');
+  }
+}
+
 async function boot(){
   try{
     state.me=await dbStart();
@@ -767,7 +809,7 @@ async function boot(){
       state.user=state.me.nickname; state.screen='app';
       let saved=null; try{ saved=localStorage.getItem('civic.addr'); }catch(e){}
       state.addr=ADDRESSES.find(a=>a.id===saved)||null;
-      try{state.saved=JSON.parse(localStorage.getItem('civic.saved')||'null')||migrateSaved();}catch(e){state.saved={};}
+      await loadSaved();
     }
     await reloadBoards();
   }catch(e){ state.error='Could not connect to the database. '+e.message; }
@@ -787,7 +829,7 @@ document.addEventListener('click',e=>{
   if(act==='signout') return signOutApp();
   if(act==='page') return go(id,{meetingId:null,boardKey:null,threadId:null});
   if(act==='meeting') return go('meeting',{meetingId:id,menuFor:null});
-  if(act==='save'){ if(state.saved[key]) delete state.saved[key]; else state.saved[key]=true; persist(); return render(); }
+  if(act==='save') return toggleSave(key);
   if(act==='body') return go('body',{bodyId:id});
   if(act==='item') return go('item',{itemId:id,threadId:null});
   if(act==='explain') return go('explain',{itemId:id});
