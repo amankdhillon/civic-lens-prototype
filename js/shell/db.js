@@ -20,30 +20,43 @@ function dbFail(error) {
   if (msg.includes('Anonymous')) throw new Error('Anonymous sign-ins are off. Turn them on in Supabase: Authentication > Sign In / Providers.');
   if (msg.includes('row-level security')) throw new Error("That isn't allowed from this account. Check that your districts cover this board.");
   if (msg.includes('Failed to fetch')) throw new Error('Cannot reach Supabase. Check your internet connection.');
+  if (/rate limit/i.test(msg) || error?.code === 'over_request_rate_limit') {
+    throw new Error('Too many new visitors from this network right now. Wait a few minutes and try again.');
+  }
   throw new Error(msg);
 }
 
-// Starts an anonymous session if needed, then returns this person's profile (or null if none yet).
+// Returns the signed-in user. A session saved in this browser can outlive its anonymous user (for example
+// after the project is reset), so check it with the server. If the check fails, clear it and sign in again.
+async function dbEnsureUser() {
+  const { data: u, error } = await db.auth.getUser();
+  if (!error && u?.user) return u.user;
+  await db.auth.signOut({ scope: 'local' }).catch(() => {});
+  const r = await db.auth.signInAnonymously();
+  if (r.error) dbFail(r.error);
+  const { data: again, error: againError } = await db.auth.getUser();
+  if (againError || !again?.user) throw new Error('Could not start a session. Reload the page and try again.');
+  return again.user;
+}
+
+// Starts a session if needed, then returns this person's profile (or null if none yet).
 async function dbStart() {
-  const { data: s } = await db.auth.getSession();
-  if (!s.session) {
-    const r = await db.auth.signInAnonymously();
-    if (r.error) dbFail(r.error);
-  }
-  const { data: u } = await db.auth.getUser();
-  if (!u?.user) return null;
-  const { data: row, error } = await db.from('profiles').select('*').eq('id', u.user.id).maybeSingle();
+  const user = await dbEnsureUser();
+  const { data: row, error } = await db.from('profiles').select('*').eq('id', user.id).maybeSingle();
   if (error) dbFail(error);
   return row ? { id: row.id, nickname: row.nickname, placeIds: row.place_ids ?? [] } : null;
 }
 
 async function dbCreateProfile(nickname) {
-  const { data: u } = await db.auth.getUser();
-  if (!u?.user) throw new Error('Your session expired. Reload the page and try again.');
+  const user = await dbEnsureUser();
   const name = nickname.slice(0, 30);
-  const { error } = await db.from('profiles').insert({ id: u.user.id, nickname: name });
-  if (error) dbFail(error);
-  return { id: u.user.id, nickname: name, placeIds: [] };
+  const { error } = await db.from('profiles').insert({ id: user.id, nickname: name });
+  if (error && error.code !== '23505') dbFail(error); // 23505 = profile already exists (for example, a double click)
+  if (error) {
+    const existing = await dbStart();
+    if (existing) return existing;
+  }
+  return { id: user.id, nickname: name, placeIds: [] };
 }
 
 // Saves the districts a person chose. The address itself is never stored.
@@ -52,15 +65,28 @@ async function dbSaveLocation(userId, placeIds, bodyIds) {
   if (error) dbFail(error);
 }
 
+// Reads every row of a view in pages. The API returns at most 1,000 rows per request, so a single read
+// would silently drop older threads and posts once the boards grow. Order includes id so pages never overlap.
+async function dbSelectAll(view, orderCol, ascending) {
+  const PAGE = 1000;
+  const rows = [];
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await db.from(view).select('*')
+      .order(orderCol, { ascending }).order('id', { ascending: true })
+      .range(from, from + PAGE - 1);
+    if (error) dbFail(error);
+    rows.push(...(data ?? []));
+    if (!data || data.length < PAGE) return rows;
+  }
+}
+
 // Every thread and post the shell shows, newest threads first.
 async function dbLoadBoards() {
-  const [t, p] = await Promise.all([
-    db.from('discussion_thread_view').select('*').order('created_at', { ascending: false }),
-    db.from('discussion_post_view').select('*').order('created_at'),
+  const [threads, posts] = await Promise.all([
+    dbSelectAll('discussion_thread_view', 'created_at', false),
+    dbSelectAll('discussion_post_view', 'created_at', true),
   ]);
-  if (t.error) dbFail(t.error);
-  if (p.error) dbFail(p.error);
-  return { threads: t.data ?? [], posts: p.data ?? [] };
+  return { threads, posts };
 }
 
 async function dbPostThread({ userId, scope, id, title, kind, body }) {
