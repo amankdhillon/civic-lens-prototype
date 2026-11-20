@@ -1,12 +1,16 @@
 // Every kind of thing on the page has one label and one colour. Colour is never the only cue.
 const KIND={meeting:['Meeting','k-meeting'],item:['Agenda item','k-item'],decision:['Decision','k-decision'],discussion:['Discussion','k-discussion'],yours:['Your district','k-yours'],other:['Other district','k-other']};
 const kindTag=k=>`<span class="kind ${KIND[k][1]}">${KIND[k][0]}</span>`;
-const TITLES={feed:'Feed',find:'Find my districts',bodies:'Bodies',body:'Body',meetings:'Meetings',calendar:'My calendar',meeting:'Meeting',boards:'Your discussions',allboards:'All discussion boards',board:'Discussion board',thread:'Thread',item:'Agenda item',favorites:'Favorites'};
+// Sample AI summaries for the demo only. The text is written from titles and labels, not generated from the agenda.
+const aiMeeting=m=>`In short: ${m.items.length} agenda item${m.items.length===1?'':'s'}. ${m.items.map(i=>i.title).join('; ')}.`;
+const aiItem=it=>`In short: ${it.action==='Final decision'?'a final vote by this body':'advice only, with no vote'} on ${it.title.charAt(0).toLowerCase()+it.title.slice(1)}.`;
+const aiSummary=(key,text)=>{const open=!!state.aiOpen[key];return `<div class="ai-wrap"><button class="ghost" data-act="ai" data-key="${esc(key)}" aria-expanded="${open}">${open?'Hide AI summary (sample)':'AI summary (sample)'}</button>${open?`<div class="ai-box"><p class="ai-tag">AI summary · sample</p><p>${esc(text)}</p><p class="muted small">Sample text for the demo. It was not generated from the agenda. Check the official item.</p></div>`:''}</div>`;};
+const TITLES={feed:'Feed',find:'Find my districts',bodies:'Bodies',body:'Body',meetings:'Meetings',calendar:'My calendar',meeting:'Meeting',boards:'Your discussions',allboards:'All discussion boards',board:'Discussion board',thread:'Thread',item:'Agenda item',explain:'Write an explanation',favorites:'Favorites'};
 const NAV_ON={feed:'feed',find:'find',bodies:'bodies',body:'bodies',meetings:'meetings',meeting:'meetings',calendar:'calendar',boards:'boards',allboards:'boards',board:'boards',thread:'boards',item:'meetings',favorites:'favorites'};
 
 const state={screen:'signin',user:'',error:'',addr:null,page:'meetings',navOpen:true,toggles:{fed:true,county:true,city:true,school:true,cpg:true},
   bodyId:null,meetingId:null,boardKey:null,threadId:null,query:'',boardQuery:'',drafts:{},followed:{},seq:100,
-  calendar:[],menuFor:null,itemId:null,customEx:{},favItems:{},favBoards:{},remote:{threads:[],posts:[]},me:null,ready:false,postError:''};
+  calendar:[],menuFor:null,itemId:null,customEx:{},favItems:{},favBoards:{},aiOpen:{},remote:{threads:[],posts:[]},me:null,ready:false,postError:''};
 
 /* ---------- helpers ---------- */
 const fmtDate=d=>new Date(d+'T12:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'});
@@ -317,12 +321,10 @@ function viewMeeting(){
   const items=m.items.map((it,i)=>{
     const ik='item:'+it.id, isFinal=it.action==='Final decision', ex=explainCount(ik), cm=commentCount(ik);
     return `<li class="agenda-item"><span class="ai-num" aria-hidden="true">${i+1}</span><div class="ai-main">
-      <p>${kindTag('item')}</p><h3>${esc(it.title)}</h3>
+      <h3>${esc(it.title)}</h3>
       <p class="tags"><span class="tag ${isFinal?'final':'adv'}">${isFinal?'Final vote':'Advice only'}</span>${past?(it.result?`<span class="tag ok">Passed or result: ${esc(it.result)}</span>`:''):'<span class="tag up">Upcoming</span>'}</p>
-      
-      <p class="small"><b>${past?'What it did':'What it could do'}:</b> ${esc(it.stakes)}</p><p class="small muted">Official summary: ${esc(it.summary)}</p>
-      <p class="small"><b>Who decides:</b> ${esc(it.accountable||'Not yet recorded.')}</p>
-      <div class="bar">${starItemBtn(it.id)}<button data-act="item" data-id="${it.id}">Open item: ${ex} explanation${ex===1?'':'s'}, ${cm} comment${cm===1?'':'s'}</button></div>
+      <p>${esc(it.stakes)}</p>
+      <div class="bar">${starItemBtn(it.id)}<button class="ghost" data-act="item" data-id="${it.id}">Open item · ${ex} explanation${ex===1?'':'s'} · ${cm} comment${cm===1?'':'s'}</button></div>
     </div></li>`;
   }).join('');
   const threads=meetingThreads(m);
@@ -335,11 +337,11 @@ function viewMeeting(){
       <h1>${esc(m.title)}</h1>
       <p class="meta">${fmtDate(m.date)} · ${esc(m.time)}${b.where?` · ${esc(b.where)}`:''}</p>
       <p class="tags"><span class="tag ${past?'prev':'up'}">${past?'Previous':'Upcoming'}</span>${cal?'<span class="tag cal">On your calendar</span>':''}</p>
-      <div class="bar">${addControls(m)}</div>
+      <div class="bar">${addControls(m)}</div>${aiSummary('meet:'+m.id, aiMeeting(m))}
     </section>
-    <section class="card"><h2>Overview</h2><p>${esc(overview)}</p>
+    <section class="card"><h2>Summary</h2><p>${esc(overview)}</p>
       <p class="muted small">${m.source?`Source: <a href="${esc(m.source)}" target="_blank" rel="noopener">City Clerk meetings calendar</a>, checked ${esc(m.checked||'')}. Verify before relying on it.`:'Sample schedule and agenda for this prototype. Not from an official source.'}</p></section>
-    <section class="card"><h2>Agenda</h2><p class="muted small">Open an item to read its plain summary, who is accountable, and residents' explanations. Comments on an item stay with that item.</p>
+    <section class="card"><h2>Agenda</h2><p class="muted small">Open an item for its full summary, who decides, and residents' explanations.</p>
       ${items?`<ol class="agenda">${items}</ol>`:'<p class="muted">Agenda items have not been loaded for this meeting yet.</p>'}</section>
     <section class="card zone-community"><h2>Meeting discussion</h2>
       <p class="muted small">Threads about the whole meeting are on the ${esc(b.name)} board.</p>
@@ -446,15 +448,14 @@ function viewItem(){
       <div class="ex-body">${x.posts.map(p=>`<div class="pre">${esc(p.text)}</div>`).join('')}
         <p class="muted small">Replies to an explanation stay in its thread.</p>
         <button class="ghost" data-act="thread" data-key="${esc(k)}" data-id="${x.id}">Open thread and reply</button></div></details>`).join('')
-    :'<p class="muted">No explanations yet. Write the first one below.</p>';
+    :'<p class="muted">No explanations yet.</p>';
   const comList=com.length?com.map(x=>`<div class="brow"><div class="brow-main">${kindTag('discussion')}<button class="linkish" data-act="thread" data-key="${esc(k)}" data-id="${x.id}">${esc(x.title)}</button>
       <div class="muted small">${esc(KIND_LABEL[x.kind])} · ${x.posts.length} post${x.posts.length===1?'':'s'} · last post ${esc(fmtShort(threadLast(x)))}</div></div></div>`).join('')
     :'<p class="muted">No comments yet.</p>';
-  const canWriteEx=canWrite;
-  const writeBlock=canWriteEx
-    ? `${exComposer(k)}<div class="bar"><button data-act="postex" data-key="${esc(k)}">Post explanation</button></div>`
-    : '<p class="muted small">Only people whose districts cover this item can post. You can read explanations and follow the item.</p>';
   const kindNow=state.drafts['newkind:'+k]||'question';
+  const explainBlock=canWrite
+    ? `<div class="bar"><button data-act="explain" data-id="${it.id}">Write an explanation</button></div>`
+    : '<p class="muted small">Only people whose districts cover this item can write explanations. You can read them and follow the item.</p>';
   const commentBlock=canWrite
     ? `<div class="exf"><label for="nt">Title</label><input id="nt" data-draft="newtitle:${esc(k)}" value="${esc(state.drafts['newtitle:'+k]||'')}" placeholder="Your question or comment" autocomplete="off"></div>
        <div class="exf"><label for="nk">Type</label><select id="nk" data-draft="newkind:${esc(k)}">${[['question','Question'],['opinion','Opinion']].map(([v,l])=>`<option value="${v}" ${kindNow===v?'selected':''}>${l}</option>`).join('')}</select></div>
@@ -465,24 +466,39 @@ function viewItem(){
     <section class="card">
       <button class="ghost" data-act="meeting" data-id="${m.id}" style="margin-bottom:14px">← Back to the ${esc(fmtDate(m.date))} meeting</button>
       <p class="eyebrow">${esc(BODIES[m.body].name)} · ${esc(m.title)} · ${fmtDate(m.date)}</p>
-      <p>${kindTag('item')}</p><h1>${esc(it.title)}</h1><div class="bar">${starItemBtn(it.id)}</div>
+      <h1>${esc(it.title)}</h1>
       <p class="tags"><span class="tag ${final?'final':'adv'}">${final?'Final vote':'Advice only'}</span>${past?(it.result?`<span class="tag ok">Passed or result: ${esc(it.result)}</span>`:''):'<span class="tag up">Upcoming</span>'}</p>
+      <div class="bar">${starItemBtn(it.id)}</div>${aiSummary('item:'+it.id, aiItem(it))}
     </section>
-    <section class="card zone-official"><h2>What it does</h2>
-      
-      <p><b>${past?'What it did':'What it could do'}:</b> ${esc(it.stakes)}</p><p class="small muted">Official summary: ${esc(it.summary)}</p>
+    <section class="card zone-official"><h2>Summary</h2>
+      <p><b>${past?'What it did':'What it could do'}:</b> ${esc(it.stakes)}</p>
+      <p class="small muted">Official summary: ${esc(it.summary)}</p>
+      <p><b>Who decides:</b> ${esc(it.accountable||'Not yet recorded for this item.')}</p>
       <p class="muted small">Written by hand for this prototype. This is not AI and not an official summary. Check the agenda item.</p></section>
-    <section class="card"><h2>Who decides</h2><p>${esc(it.accountable||'Not yet recorded for this item.')}</p></section>
-    <section class="card zone-community"><h2>Resident explanations</h2>
-      <p class="muted small">Answer what you know. Only the official link is required.</p>
+    <section class="card zone-community"><h2>Explanations</h2>
+      <p class="muted small">Residents' plain-language explanations. Each one links to its official source.</p>
       ${exList}
-      <h3 style="margin-top:22px">Add an explanation</h3>
-      ${writeBlock}</section>
+      ${explainBlock}</section>
     <section class="card zone-community"><h2>Comments</h2>
-      <p class="muted small">Questions and opinions go here. Explanations go above.</p>
+      <p class="muted small">Questions and opinions about this item.</p>
       ${comList}
       <h3 style="margin-top:22px">Start a comment</h3>
       ${commentBlock}</section>`;
+}
+
+function viewExplain(){
+  const f=findItem(state.itemId);
+  if(!f) return `<section class="card"><p class="muted">That agenda item could not be found.</p></section>`;
+  const {m,it}=f, k='item:'+it.id;
+  const back=`<button class="ghost" data-act="item" data-id="${it.id}" style="margin-bottom:14px">← Back to the item</button>`;
+  if(!canPost(k)) return `<section class="card">${back}<h1>Write an explanation</h1><p class="muted">Only people whose districts cover this item can write explanations. You can read them and follow the item.</p></section>`;
+  return `<div id="newerr" class="err" role="alert"></div>
+    <section class="card">${back}
+      <p class="eyebrow">${esc(BODIES[m.body].name)} · ${esc(it.title)}</p>
+      <h1>Write an explanation</h1>
+      <p class="muted">Explain what this item means in plain words. Answer what you know. Only the official link is required. Skip anything you do not know.</p>
+    </section>
+    <section class="card">${exComposer(k)}<div class="bar"><button data-act="postex" data-key="${esc(k)}">Post explanation</button></div></section>`;
 }
 
 const KINDS=[['question','Question'],['information','Information, with a source'],['opinion','Opinion']];
@@ -549,7 +565,7 @@ function sidebarBody(){
 }
 
 function viewApp(){
-  const pages={feed:viewFeed,find:viewFind,bodies:viewBodies,body:viewBody,meetings:viewMeetings,calendar:viewCalendar,meeting:viewMeeting,boards:viewBoards,allboards:viewAllBoards,board:viewBoard,thread:viewThread,item:viewItem,favorites:viewFavorites};
+  const pages={feed:viewFeed,find:viewFind,bodies:viewBodies,body:viewBody,meetings:viewMeetings,calendar:viewCalendar,meeting:viewMeeting,boards:viewBoards,allboards:viewAllBoards,board:viewBoard,thread:viewThread,item:viewItem,explain:viewExplain,favorites:viewFavorites};
   const sub=state.page==='board'||state.page==='thread'?(boardInfo(state.boardKey).title):'';
   return `<div class="shell ${state.navOpen?'':'closed'}">
     <aside class="side" aria-label="Main navigation">${sidebarBody()}</aside>
@@ -653,7 +669,9 @@ document.addEventListener('click',e=>{
   if(act==='tocal'){const i=state.calendar.indexOf(id);if(i>=0)state.calendar.splice(i,1);else state.calendar.push(id);state.menuFor=id;persist();return render();}
   if(act==='body') return go('body',{bodyId:id});
   if(act==='item') return go('item',{itemId:id,threadId:null});
+  if(act==='explain') return go('explain',{itemId:id});
   if(act==='postex') return postEx(key);
+  if(act==='ai'){state.aiOpen[key]=!state.aiOpen[key];return render();}
   if(act==='meetthread'){const m=findMeeting(id);state.drafts['newtitle:body:'+m.body]=fmtShort(m.date)+' meeting: ';return go('board',{boardKey:'body:'+m.body,threadId:null});}
   if(act==='staritem'){if(state.favItems[id]) delete state.favItems[id]; else state.favItems[id]=true; persistFavs(); return render();}
   if(act==='starboard'){if(state.favBoards[key]) delete state.favBoards[key]; else state.favBoards[key]=true; persistFavs(); return render();}
