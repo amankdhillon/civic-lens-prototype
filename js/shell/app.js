@@ -4,7 +4,26 @@ const kindTag=k=>`<span class="kind ${KIND[k][1]}">${KIND[k][0]}</span>`;
 // Sample AI summaries for the demo only. The text is written from titles and labels, not generated from the agenda.
 const aiMeeting=m=>`In short: ${m.items.length} agenda item${m.items.length===1?'':'s'}. ${m.items.map(i=>i.title).join('; ')}.`;
 const aiItem=it=>`In short: ${it.action==='Final decision'?'a final vote by this body':'advice only, with no vote'} on ${it.title.charAt(0).toLowerCase()+it.title.slice(1)}.`;
-const aiSummary=(key,text)=>{const open=!!state.aiOpen[key];return `<div class="ai-wrap"><button class="ghost" data-act="ai" data-key="${esc(key)}" aria-expanded="${open}">${open?'Hide AI summary (sample)':'AI summary (sample)'}</button>${open?`<div class="ai-box"><p class="ai-tag">AI summary · sample</p><p>${esc(text)}</p><p class="muted small">Sample text for the demo. It was not generated from the agenda. Check the official item.</p></div>`:''}</div>`;};
+const BODY_PLAIN={
+  bos:'The Board of Supervisors is the county\'s governing body. Five elected supervisors set county policy, approve the county budget, and oversee county services.',
+  sdcc:'The City Council is the city\'s lawmaking body. Nine elected council members, one for each district, vote on city laws, the city budget, and many local projects.',
+  'cpg-uptown':'A community planning group is a recognized neighborhood group. It advises the City on land use, building projects, and neighborhood issues. It does not make the final decision; the City Council and other bodies do.'
+};
+// AI summary as its own section. Feedback posts to the discussion board for this meeting or item.
+const aiSection=({text,boardKey,title,id})=>`<section class="card zone-ai" aria-labelledby="ai-${esc(id)}">
+  <p class="zone-label">AI summary · sample</p>
+  <h2 id="ai-${esc(id)}">What this says, in short</h2>
+  <p>${esc(text)}</p>
+  <p class="muted small">Sample text for this prototype. It was not generated from the agenda. Check the official record before relying on it.</p>
+  <details class="flag"><summary>Report an error or comment on this summary</summary>
+    <div class="prompt-body">
+      <label for="aifb-${esc(id)}">What is wrong or missing?</label>
+      <textarea id="aifb-${esc(id)}" rows="3" data-draft="aifb:${esc(boardKey)}">${esc(state.drafts['aifb:'+boardKey]||'')}</textarea>
+      <div class="bar"><button data-act="aipost" data-key="${esc(boardKey)}" data-id="${esc(title)}">Send to the discussion board</button></div>
+      <p class="muted small">Your note is posted as a question on the board, so others can answer it.</p>
+    </div>
+  </details>
+</section>`;
 const TITLES={feed:'Feed',find:'Find my districts',bodies:'Bodies',body:'Body',meetings:'Meetings',calendar:'My calendar',meeting:'Meeting',boards:'Your discussions',allboards:'All discussion boards',board:'Discussion board',thread:'Thread',item:'Agenda item',explain:'Write an explanation',favorites:'Favorites'};
 const NAV_ON={feed:'feed',find:'find',bodies:'bodies',body:'bodies',meetings:'meetings',meeting:'meetings',calendar:'calendar',boards:'boards',allboards:'boards',board:'boards',thread:'boards',item:'meetings',favorites:'favorites'};
 
@@ -283,6 +302,7 @@ function viewBody(){
     : '';
   return `<div class="card"><button class="ghost" data-act="page" data-id="bodies" style="margin-bottom:10px">← Back to bodies</button>
     <h1>${esc(b.name)}</h1><p>${esc(b.about)}</p>
+    <div class="plain"><b>In plain words:</b> ${esc(BODY_PLAIN[state.bodyId]||b.about)}</div>
     <span class="tag">${esc(kindLabel(b))}</span>
     ${inScope(key)?'<span class="tag ok">In your area</span>':''}
     ${facts}
@@ -331,19 +351,22 @@ function viewMeeting(){
   const tl=threads.length?threads.map(th=>`<div class="brow"><div class="brow-main">${kindTag('discussion')}<button class="linkish" data-act="thread" data-key="body:${esc(m.body)}" data-id="${esc(th.id)}">${esc(th.title)}</button>
       <div class="muted small">${th.posts.length} post${th.posts.length===1?'':'s'} · last post ${esc(fmtShort(threadLast(th)))}</div></div></div>`).join('')
     :'<p class="muted">No threads about this meeting yet.</p>';
-  return `<section class="card">
+  return `<div id="newerr" class="err" role="alert"></div><section class="card">
       <button class="ghost" data-act="page" data-id="meetings" style="margin-bottom:14px">← Back to meetings</button>
       <p class="eyebrow">${esc(b.name)}</p>
       <h1>${esc(m.title)}</h1>
       <p class="meta">${fmtDate(m.date)} · ${esc(m.time)}${b.where?` · ${esc(b.where)}`:''}</p>
       <p class="tags"><span class="tag ${past?'prev':'up'}">${past?'Previous':'Upcoming'}</span>${cal?'<span class="tag cal">On your calendar</span>':''}</p>
-      <div class="bar">${addControls(m)}</div>${aiSummary('meet:'+m.id, aiMeeting(m))}
+      <p class="small"><b>What this body is:</b> ${esc(BODY_PLAIN[m.body]||'')}</p>
+      <div class="bar">${addControls(m)}</div>
     </section>
-    <section class="card"><h2>Summary</h2><p>${esc(overview)}</p>
+    ${aiSection({text:aiMeeting(m),boardKey:'body:'+m.body,title:fmtShort(m.date)+' meeting: AI summary feedback',id:'meet-'+m.id})}
+    <section class="card zone-official"><p class="zone-label">Official record</p><h2>Summary</h2><p>${esc(overview)}</p>
+      <p class="small"><b>Final vote</b> means this body makes the decision. <b>Advice only</b> means this body recommends, and another body decides.</p>
       <p class="muted small">${m.source?`Source: <a href="${esc(m.source)}" target="_blank" rel="noopener">City Clerk meetings calendar</a>, checked ${esc(m.checked||'')}. Verify before relying on it.`:'Sample schedule and agenda for this prototype. Not from an official source.'}</p></section>
-    <section class="card"><h2>Agenda</h2><p class="muted small">Open an item for its full summary, who decides, and residents' explanations.</p>
+    <section class="card zone-official"><h2>Agenda</h2><p class="muted small">Open an item for its full summary, who decides, and residents' explanations.</p>
       ${items?`<ol class="agenda">${items}</ol>`:'<p class="muted">Agenda items have not been loaded for this meeting yet.</p>'}</section>
-    <section class="card zone-community"><h2>Meeting discussion</h2>
+    <section class="card zone-community"><p class="zone-label">Residents</p><h2>Meeting discussion</h2>
       <p class="muted small">Threads about the whole meeting are on the ${esc(b.name)} board.</p>
       ${tl}
       <div class="bar"><button class="ghost" data-act="meetthread" data-id="${m.id}">Start a thread about this meeting</button></div></section>`;
@@ -468,18 +491,19 @@ function viewItem(){
       <p class="eyebrow">${esc(BODIES[m.body].name)} · ${esc(m.title)} · ${fmtDate(m.date)}</p>
       <h1>${esc(it.title)}</h1>
       <p class="tags"><span class="tag ${final?'final':'adv'}">${final?'Final vote':'Advice only'}</span>${past?(it.result?`<span class="tag ok">Passed or result: ${esc(it.result)}</span>`:''):'<span class="tag up">Upcoming</span>'}</p>
-      <div class="bar">${starItemBtn(it.id)}</div>${aiSummary('item:'+it.id, aiItem(it))}
+      <div class="bar">${starItemBtn(it.id)}</div>
     </section>
-    <section class="card zone-official"><h2>Summary</h2>
+    ${aiSection({text:aiItem(it),boardKey:'item:'+it.id,title:'AI summary feedback: '+it.title,id:'item-'+it.id})}
+    <section class="card zone-official"><p class="zone-label">Official record</p><h2>Summary</h2>
       <p><b>${past?'What it did':'What it could do'}:</b> ${esc(it.stakes)}</p>
       <p class="small muted">Official summary: ${esc(it.summary)}</p>
       <p><b>Who decides:</b> ${esc(it.accountable||'Not yet recorded for this item.')}</p>
       <p class="muted small">Written by hand for this prototype. This is not AI and not an official summary. Check the agenda item.</p></section>
-    <section class="card zone-community"><h2>Explanations</h2>
+    <section class="card zone-community"><p class="zone-label">Residents</p><h2>Explanations</h2>
       <p class="muted small">Residents' plain-language explanations. Each one links to its official source.</p>
       ${exList}
       ${explainBlock}</section>
-    <section class="card zone-community"><h2>Comments</h2>
+    <section class="card zone-community"><p class="zone-label">Residents</p><h2>Comments</h2>
       <p class="muted small">Questions and opinions about this item.</p>
       ${comList}
       <h3 style="margin-top:22px">Start a comment</h3>
@@ -671,7 +695,18 @@ document.addEventListener('click',e=>{
   if(act==='item') return go('item',{itemId:id,threadId:null});
   if(act==='explain') return go('explain',{itemId:id});
   if(act==='postex') return postEx(key);
-  if(act==='ai'){state.aiOpen[key]=!state.aiOpen[key];return render();}
+  if(act==='aipost'){
+    const body=(state.drafts['aifb:'+key]||'').trim();
+    if(!body){ const e=document.getElementById('newerr'); if(e) e.textContent='Tell us what is wrong or missing first.'; return; }
+    // Keep any comment the person was writing on this page, as postEx does.
+    const saved=[['newtitle:'+key,state.drafts['newtitle:'+key]],['newbody:'+key,state.drafts['newbody:'+key]],['newkind:'+key,state.drafts['newkind:'+key]]];
+    state.drafts['newtitle:'+key]=id; state.drafts['newbody:'+key]=body; state.drafts['newkind:'+key]='question';
+    return postNewThread(key).then(()=>{
+      const posted=state.drafts['newbody:'+key]===undefined;
+      for(const [k2,v] of saved){ if(v===undefined) delete state.drafts[k2]; else state.drafts[k2]=v; }
+      if(posted){ delete state.drafts['aifb:'+key]; }
+    });
+  }
   if(act==='meetthread'){const m=findMeeting(id);state.drafts['newtitle:body:'+m.body]=fmtShort(m.date)+' meeting: ';return go('board',{boardKey:'body:'+m.body,threadId:null});}
   if(act==='staritem'){if(state.favItems[id]) delete state.favItems[id]; else state.favItems[id]=true; persistFavs(); return render();}
   if(act==='starboard'){if(state.favBoards[key]) delete state.favBoards[key]; else state.favBoards[key]=true; persistFavs(); return render();}
