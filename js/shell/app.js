@@ -365,7 +365,7 @@ function districtSection(p){
 }
 // The new-thread form. It is hidden until someone presses Start a thread. Used on the board page and in the body panel.
 const COMMENT_KINDS=[['question','Question'],['opinion','Opinion']];
-function threadFormHtml(k,{heading='Start a thread',submit='Post thread',kinds=KINDS,withErr=true}={}){
+function threadFormHtml(k,{heading='Start a thread',submit='Post thread',kinds=KINDS,withErr=true,inline=false}={}){
   const dt=state.drafts['newtitle:'+k]||'', db=state.drafts['newbody:'+k]||'', dk=state.drafts['newkind:'+k]||'question';
   return `<h2>${esc(heading)}</h2>
       <label for="nt" class="small">Title</label>
@@ -375,32 +375,49 @@ function threadFormHtml(k,{heading='Start a thread',submit='Post thread',kinds=K
       <label for="nb" class="small" style="display:block;margin-top:8px">Your post</label>
       <textarea id="nb" rows="3" data-draft="newbody:${esc(k)}">${esc(db)}</textarea>
       ${withErr?'<div class="err" id="newerr" role="alert"></div>':''}
-      <div class="bar"><button data-act="newthread" data-key="${esc(k)}">${esc(submit)}</button><button class="ghost" data-act="compose">Cancel</button></div>`;
+      <div class="bar"><button data-act="newthread" ${inline?'data-id="inline"':''} data-key="${esc(k)}">${esc(submit)}</button><button class="ghost" data-act="compose">Cancel</button></div>`;
 }
 // The body's discussion board, on the right of its page. It collapses to a slim tab.
-// The discussion panel beside a body or a meeting. A meeting passes its own threads and a start button that stays on the page.
+// One thread in the side panel. Press its title to open the posts and a reply box right there.
+function threadRowHtml(key,t){
+  const open=state.openThread===t.id;
+  const posts=t.posts.map(p=>`<div class="post"><b>${esc(p.who)}</b> <span class="muted small">${esc(fmtShort(p.t))}</span><div class="pre">${esc(p.text)}</div></div>`).join('');
+  const reply=canPost(key)?`<div class="reply-box">
+      <label for="rp-${esc(t.id)}" class="small">Reply</label>
+      <textarea id="rp-${esc(t.id)}" rows="2" data-draft="reply:${esc(t.id)}">${esc(state.drafts['reply:'+t.id]||'')}</textarea>
+      <div class="err" role="alert">${open?esc(state.postError||''):''}</div>
+      <div class="bar"><button data-act="reply" data-key="${esc(key)}" data-id="${esc(t.id)}">Post reply</button></div>
+    </div>`:'';
+  return `<div class="pthread ${open?'open':''}">
+    <button class="pthread-title" data-act="tog" data-id="${esc(t.id)}" aria-expanded="${open}">
+      <span class="pthread-name">${esc(t.title)}</span>
+      <span class="muted small">${esc(KIND_LABEL[t.kind])} · ${t.posts.length} post${t.posts.length===1?'':'s'} · ${esc(fmtShort(threadLast(t)))}</span>
+    </button>
+    ${open?`<div class="pthread-body">${posts}${reply}<p class="small"><button class="linkish" data-act="thread" data-key="${esc(key)}" data-id="${esc(t.id)}">Open full thread</button></p></div>`:''}
+  </div>`;
+}
+// The side panel beside a body, a meeting, or an agenda item. A single arrow collapses it. A "+" starts a thread or comment.
 function discussionPanelHtml(key,{threads:given=null,meetingId=null,note='',startLabel='Start a thread',formOpts={}}={}){
   const open=state.panelOpen, post=canPost(key);
   const threads=(given||boardFor(key).threads).slice().sort((x,y)=>threadLast(y).localeCompare(threadLast(x)));
-  const list=threads.length?threads.map(t=>`<div class="thread"><button class="linkish" data-act="thread" data-key="${esc(key)}" data-id="${esc(t.id)}">${esc(t.title)}</button>
-      <div class="muted small">${esc(KIND_LABEL[t.kind])} · ${t.posts.length} post${t.posts.length===1?'':'s'} · last activity ${esc(fmtShort(threadLast(t)))}</div></div>`).join('')
-    :'<p class="muted small">No threads yet.</p>';
-  const start=meetingId
-    ? `<button data-act="meetthread" data-id="${esc(meetingId)}">Start a thread about this meeting</button>`
-    : `<button data-act="compose">${esc(startLabel)}</button>`;
-  const composer=!post
-    ? '<p class="muted small">You can read and follow this board. Only people in districts this body covers can post.</p>'
-    : state.composing ? `<div class="composer">${threadFormHtml(key,formOpts)}</div>` : `<div class="bar">${start}</div>`;
+  const addBtn=!post?'':state.composing
+    ? '<button class="round-add" data-act="compose" aria-label="Cancel" title="Cancel">×</button>'
+    : meetingId
+      ? `<button class="round-add" data-act="meetthread" data-id="${esc(meetingId)}" aria-label="${esc(startLabel)}" title="${esc(startLabel)}">+</button>`
+      : `<button class="round-add" data-act="compose" aria-label="${esc(startLabel)}" title="${esc(startLabel)}">+</button>`;
+  const composer=state.composing&&post?`<div class="composer">${threadFormHtml(key,{...formOpts,inline:true})}</div>`:'';
+  const list=threads.length?threads.map(t=>threadRowHtml(key,t)).join(''):'<p class="muted small">No threads yet.</p>';
   return `<aside class="disc-panel ${open?'':'collapsed'}" aria-label="Discussion">
-    <button class="panel-toggle" data-act="panel" aria-expanded="${open}" aria-controls="disc-body" title="${open?'Collapse':'Expand'} the discussion">
-      <span aria-hidden="true">${open?'›':'‹'}</span><span>Discussion</span><span class="panel-count">${threads.length}</span>
-    </button>
+    <div class="panel-head">
+      <button class="arrow-btn" data-act="panel" aria-expanded="${open}" aria-controls="disc-body" aria-label="${open?'Collapse':'Expand'} discussion" title="${open?'Collapse':'Expand'} discussion">${open?'›':'‹'}</button>
+      ${open?`<h3 class="panel-title">Discussion <span class="muted small">${threads.length}</span></h3>${addBtn}`:''}
+    </div>
     <div id="disc-body" class="panel-body" ${open?'':'hidden'}>
       ${note?`<p class="muted small">${esc(note)}</p>`:''}
+      ${post?'':'<p class="muted small">Only people in districts this body covers can post. You can read and follow it.</p>'}
       ${composer}
-      <h3 class="panel-h">Threads</h3>
       ${list}
-      <div class="bar"><button class="ghost" data-act="board" data-key="${esc(key)}">Open full board</button>${starBtn(key)}</div>
+      <p class="panel-foot"><button class="linkish" data-act="board" data-key="${esc(key)}">Open board</button> ${starBtn(key)}</p>
     </div>
   </aside>`;
 }
@@ -743,7 +760,7 @@ async function signOutApp(){
   Object.assign(state,{screen:'signin',user:'',addr:null,error:'',page:'feed',me:null,saved:{},menuFor:null,remote:{threads:[],posts:[]},drafts:{},customEx:{},composing:false,saveNotice:''});
   render();
 }
-async function postNewThread(key){
+async function postNewThread(key,inline=false){
   const title=(state.drafts['newtitle:'+key]||'').trim();
   const body=(state.drafts['newbody:'+key]||'').trim();
   const kind=state.drafts['newkind:'+key]||'question';
@@ -756,6 +773,7 @@ async function postNewThread(key){
     const threadId=await dbPostThread({userId:state.me.id,scope,id,title,kind,body});
     delete state.drafts['newtitle:'+key]; delete state.drafts['newbody:'+key]; delete state.drafts['newkind:'+key];
     await reloadBoards();
+    if(inline){Object.assign(state,{composing:false,openThread:threadId});return render();}
     return go('thread',{boardKey:key,threadId});
   }catch(e){ if(err) err.textContent=e.message; }
 }
@@ -836,7 +854,7 @@ async function boot(){
   state.navOpen=window.matchMedia('(min-width:761px)').matches;
   state.ready=true;
   render();
-}function go(page,extra={}){Object.assign(state,{page,composing:false},extra);if(window.matchMedia('(max-width:760px)').matches) state.navOpen=false;render();}
+}function go(page,extra={}){Object.assign(state,{page,composing:false,openThread:null},extra);if(window.matchMedia('(max-width:760px)').matches) state.navOpen=false;render();}
 
 /* ---------- events ---------- */
 document.addEventListener('click',e=>{
@@ -881,7 +899,8 @@ document.addEventListener('click',e=>{
   if(act==='blevel'){state.bodyLevel=id;return render();}
   if(act==='bmine'){state.bodyMineOnly=!state.bodyMineOnly;return render();}
   if(act==='bopen'){state.bodyOpen[id]=!state.bodyOpen[id];render();document.querySelector(`[data-act="bopen"][data-id="${id}"]`)?.focus();return;}
-  if(act==='newthread') return postNewThread(key);
+  if(act==='tog'){state.openThread=state.openThread===id?null:id;return render();}
+  if(act==='newthread') return postNewThread(key,id==='inline');
   if(act==='reply') return postReply(key,id);
 });
 document.addEventListener('input',e=>{
