@@ -308,7 +308,32 @@ details.fold>summary h2{display:inline;font-size:18px}
 .reply-box textarea{width:100%}
 .panel-foot{margin-top:14px}
 .addbtn{min-height:44px}
-.panel-toggle{min-height:44px}
+
+/* Discussion side panel: a plain header, one full-width action, and one footer row */
+.disc-panel .panel-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 12px;min-height:44px}
+.panel-title{margin:0;font-size:18px;flex:1;color:var(--ink)}
+.panel-count{color:var(--mute);font-weight:600;font-size:16px;margin-left:4px}
+.panel-toggle{min-height:44px;padding:0 6px;background:none;border:0;color:var(--link);font-weight:700;text-decoration:underline;text-underline-offset:3px;white-space:nowrap}
+.panel-toggle:hover{background:none;color:var(--navy)}
+.addbtn-block{display:block;width:100%;margin:0 0 4px;min-height:44px;text-align:center}
+.disc-panel .panel-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:16px;padding-top:12px;border-top:1px solid var(--line)}
+.disc-panel .panel-foot .linkish{min-height:44px}
+
+/* Your districts: link and save sit side by side with room between them */
+.dist-act{display:flex;gap:12px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.dist-act .linkish{min-height:44px}
+
+/* Favorites: meetings, discussions, and agenda items side by side. One column on phones. */
+.fav-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:28px;align-items:start;margin-top:8px}
+@media(min-width:700px){.fav-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(min-width:1100px){.fav-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.fav-col{min-width:0;border-top:3px solid var(--navy);padding-top:12px}
+.fav-col.fav-community{border-top-color:var(--red)}
+.fav-col h2{margin-bottom:6px}
+.fav-col .fav-row{display:flex;flex-direction:column;align-items:flex-start;gap:6px;padding:12px 0;border-top:1px solid var(--line)}
+.fav-col h2+.fav-row{border-top:0;padding-top:4px}
+.fav-col .fav-act{justify-content:flex-start}
+.fav-col .tags{margin:4px 0}
 
 /* Resident contribution types: each has its own label and colored stripe, matched by the key on the page */
 .type-key{list-style:none;margin:0 0 16px;padding:0;display:grid;gap:8px;font-size:15px}

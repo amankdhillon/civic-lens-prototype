@@ -232,23 +232,27 @@ function viewFavorites(){
   const boards=keys.filter(k=>!k.startsWith('item:')&&!k.startsWith('meet:')&&!k.startsWith('thread:'));
   const items=keys.filter(k=>k.startsWith('item:')).map(k=>findItem(splitKey(k)[1])).filter(Boolean).sort((x,y)=>x.m.date.localeCompare(y.m.date));
   const meetings=keys.filter(k=>k.startsWith('meet:')).map(k=>findMeeting(splitKey(k)[1])).filter(Boolean).sort(byAsc);
-  const itemRows=items.map(({m,it})=>{
+  // One row per kind, side by side: meetings, discussions, agenda items. Each row keeps its title link and its star.
+  const meetCards=meetings.map(m=>`<div class="fav-row"><div class="fav-main"><p class="eyebrow">${esc(BODIES[m.body].name)} · ${fmtDate(m.date)} · ${esc(m.time)}</p>
+      <button class="linkish" data-act="meeting" data-id="${m.id}">${esc(m.title)}</button>
+      <p class="tags"><span class="tag ${isPast(m)?'prev':'up'}">${isPast(m)?'Previous':'Upcoming'}</span></p></div>
+      <div class="fav-act">${starMeetBtn(m.id)}</div></div>`).join('');
+  const boardCards=boards.map(k=>{const info=boardInfo(k);return `<div class="fav-row"><div class="fav-main"><button class="linkish" data-act="board" data-key="${esc(k)}">${esc(info.title)}</button><div class="muted small">${esc(info.scope)} · ${actLine(k)}</div></div><div class="fav-act">${starBoardBtn(k)}</div></div>`;}).join('');
+  const itemCards=items.map(({m,it})=>{
     const ik='item:'+it.id, past=isPast(m), ex=explainCount(ik), cm=commentCount(ik);
     return `<div class="fav-row"><div class="fav-main"><p class="eyebrow">${esc(BODIES[m.body].name)} · ${fmtDate(m.date)}</p>
       <button class="linkish" data-act="item" data-id="${it.id}">${esc(it.title)}</button>
       <p class="tags"><span class="tag ${past?'prev':'up'}">${past?'Previous':'Upcoming'}</span>${it.result?`<span class="tag ok">Result: ${esc(it.result)}</span>`:''}</p>
       <div class="muted small">${ex} explanation${ex===1?'':'s'} · ${cm} comment${cm===1?'':'s'}</div></div>
-      <div class="fav-act"><button data-act="item" data-id="${it.id}">Open item</button>${starItemBtn(it.id)}</div></div>`;
+      <div class="fav-act">${starItemBtn(it.id)}</div></div>`;
   }).join('');
-  const boardRows=boards.map(k=>{const info=boardInfo(k);return `<div class="fav-row"><div class="fav-main"><button class="linkish" data-act="board" data-key="${esc(k)}">${esc(info.title)}</button><div class="muted small">${esc(info.scope)} · ${actLine(k)}</div></div><div class="fav-act"><button data-act="board" data-key="${esc(k)}">Open board</button>${starBoardBtn(k)}</div></div>`;}).join('');
-  const meetRows=meetings.map(m=>`<div class="fav-row"><div class="fav-main"><p class="eyebrow">${esc(BODIES[m.body].name)} · ${fmtDate(m.date)} · ${esc(m.time)}</p>
-      <button class="linkish" data-act="meeting" data-id="${m.id}">${esc(m.title)}</button>
-      <p class="tags"><span class="tag ${isPast(m)?'prev':'up'}">${isPast(m)?'Previous':'Upcoming'}</span></p></div>
-      <div class="fav-act"><button data-act="meeting" data-id="${m.id}">Open meeting</button>${starMeetBtn(m.id)}</div></div>`).join('');
+  const col=(title,zone,rows,empty)=>`<section class="fav-col ${zone}"><p class="zone-label">${zone==='fav-community'?'Residents':'Official record'}</p><h2>${title}</h2>${rows||`<p class="muted small">${empty}</p>`}</section>`;
   return `<section class="card"><h1>Favorites</h1><p class="feed-key muted">The meetings, items, and threads you’ve starred.</p>${state.saveNotice?`<p class="err">${esc(state.saveNotice)}</p>`:''}</section>
-    <section class="card zone-community"><p class="zone-label">Residents</p><h2>Discussions</h2>${boardRows||'<p class="muted">No saved discussions yet. Open a board and tap the star.</p>'}</section>
-    <section class="card zone-official"><p class="zone-label">Official record</p><h2>Agenda items</h2>${itemRows||'<p class="muted">No saved agenda items yet. Open an item and tap the star.</p>'}</section>
-    <section class="card zone-official"><p class="zone-label">Official record</p><h2>Meetings</h2>${meetRows||'<p class="muted">No saved meetings yet. Tap the star on a meeting to keep it here.</p>'}</section>`;
+    <div class="fav-grid">
+      ${col('Meetings','fav-official',meetCards,'No saved meetings yet. Star a meeting to keep it here.')}
+      ${col('Discussions','fav-community',boardCards,'No saved discussions yet. Star a board to keep it here.')}
+      ${col('Agenda items','fav-official',itemCards,'No saved agenda items yet. Star an item to keep it here.')}
+    </div>`;
 }
 
 function viewProfile(){
@@ -438,24 +442,26 @@ function threadRowHtml(key,t){
 function discussionPanelHtml(key,{threads:given=null,meetingId=null,note='',startLabel='Start a thread',formOpts={}}={}){
   const open=state.panelOpen, post=canPost(key);
   const threads=(given||boardFor(key).threads).slice().sort((x,y)=>threadLast(y).localeCompare(threadLast(x)));
+  // One full-width action under the heading. It starts a thread, or closes the form when one is open.
   const addBtn=!post?'':state.composing
-    ? '<button class="ghost addbtn" data-act="compose">Cancel</button>'
+    ? '<button class="ghost addbtn-block" data-act="compose">Cancel</button>'
     : meetingId
-      ? `<button class="ghost addbtn" data-act="meetthread" data-id="${esc(meetingId)}">+ ${esc(startLabel)}</button>`
-      : `<button class="ghost addbtn" data-act="compose">+ ${esc(startLabel)}</button>`;
+      ? `<button class="addbtn-block" data-act="meetthread" data-id="${esc(meetingId)}">${esc(startLabel)}</button>`
+      : `<button class="addbtn-block" data-act="compose">${esc(startLabel)}</button>`;
   const composer=state.composing&&post?`<div class="composer">${threadFormHtml(key,{...formOpts,inline:true})}</div>`:'';
   const list=threads.length?threads.map(t=>threadRowHtml(key,t)).join(''):'<p class="muted small">No threads yet.</p>';
   return `<aside class="disc-panel ${open?'':'collapsed'}" aria-label="Discussion">
     <div class="panel-head">
-      <button class="ghost panel-toggle" data-act="panel" aria-expanded="${open}" aria-controls="disc-body">${open?'Hide discussion <span aria-hidden="true">›</span>':'<span aria-hidden="true">‹</span> Show discussion'}</button>
-      ${open?`<h3 class="panel-title">Discussion (${threads.length})</h3>${addBtn}`:''}
+      ${open?`<h3 class="panel-title">Discussion <span class="panel-count">${threads.length}</span></h3>`:''}
+      <button class="panel-toggle" data-act="panel" aria-expanded="${open}" aria-controls="disc-body">${open?'Hide':'Show'}</button>
     </div>
     <div id="disc-body" class="panel-body" ${open?'':'hidden'}>
-      ${note?`<p class="muted small">${esc(note)}</p>`:''}
       ${joinTag(key)}
+      ${note?`<p class="muted small">${esc(note)}</p>`:''}
+      ${addBtn}
       ${composer}
       ${list}
-      <p class="panel-foot"><button class="linkish" data-act="board" data-key="${esc(key)}">Open board</button> ${starBtn(key)}</p>
+      <div class="panel-foot"><button class="linkish" data-act="board" data-key="${esc(key)}">View full board</button>${starBtn(key)}</div>
     </div>
   </aside>`;
 }
