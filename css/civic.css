@@ -227,3 +227,40 @@ details.flag summary{cursor:pointer;color:var(--navy);font-weight:600;padding:6p
 .dist-list{margin-top:8px}
 .dist-row{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:12px 0;border-top:1px solid var(--line)}
 .dist-row.dist-mine{border-left:3px solid var(--navy);padding-left:12px}
+
+/* Bodies: one searchable page; each body opens in place */
+.bodies-tools{display:flex;flex-wrap:wrap;gap:10px 12px;align-items:center;margin:0 0 18px}
+.bodies-tools label{flex-basis:100%;margin:0}
+.bodies-tools input{flex:1 1 240px;min-width:0}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{min-height:36px;padding:4px 12px;border-radius:999px;background:#fff;color:var(--navy);border:1px solid #8b95aa;font:inherit;font-size:14px;cursor:pointer}
+.chip:hover{background:var(--soft)}
+.chip[aria-pressed="true"]{background:var(--navy);color:#fff;border-color:var(--navy)}
+.chip:disabled{opacity:.5;cursor:not-allowed}
+.bcard{border-top:1px solid var(--line);padding:16px 0}
+.bcard:first-child{border-top:0;padding-top:4px}
+.bcard-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.bcard-main{min-width:0}
+.bcard h3{margin:0 0 4px;font-size:19px}
+.bcard-body{margin-top:12px;padding:14px;background:var(--soft);border-radius:8px}
+.bcard-body p{margin:6px 0}
+
+/* Body page: discussion panel on the right, collapsible */
+.wrap:has(.body-layout){max-width:1180px}
+.body-layout{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:32px;align-items:start}
+.body-layout.collapsed{grid-template-columns:minmax(0,1fr) auto}
+.disc-panel{position:sticky;top:16px;min-width:0;border-left:1px solid var(--line);padding-left:24px}
+.body-layout.collapsed .disc-panel{border-left:0;padding-left:0}
+.panel-toggle{display:flex;align-items:center;gap:8px;min-height:44px;padding:8px 12px;background:var(--soft);color:var(--navy);border:1px solid #8b95aa;border-radius:6px;font:inherit;font-weight:700;cursor:pointer}
+.panel-toggle:hover{background:#e6eaf1}
+.panel-count{font-size:13px;background:#fff;border-radius:999px;padding:0 8px;line-height:22px}
+.panel-body{margin-top:14px}
+.panel-h{font-size:16px;margin:18px 0 6px}
+.composer{margin-top:12px;padding:14px;background:var(--soft);border-radius:8px}
+.body-layout.collapsed .panel-toggle{writing-mode:vertical-rl;padding:12px 8px;min-height:0}
+@media(max-width:760px){
+  .body-layout,.body-layout.collapsed{grid-template-columns:minmax(0,1fr);gap:0}
+  .disc-panel{position:static;border-left:0;padding-left:0;margin-top:28px;border-top:1px solid var(--line);padding-top:18px}
+  .body-layout.collapsed .panel-toggle{writing-mode:horizontal-tb;width:100%;justify-content:space-between}
+  .bcard-head{flex-direction:column}
+}

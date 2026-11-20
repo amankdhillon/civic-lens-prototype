@@ -29,7 +29,7 @@ const NAV_ON={feed:'feed',profile:'',bodies:'bodies',body:'bodies',meetings:'mee
 
 const state={screen:'signin',user:'',error:'',addr:null,page:'meetings',navOpen:true,toggles:{fed:true,county:true,city:true,school:true,cpg:true},
   bodyId:null,meetingId:null,boardKey:null,threadId:null,query:'',boardQuery:'',drafts:{},saved:{},seq:100,
-  menuFor:null,itemId:null,customEx:{},aiOpen:{},remote:{threads:[],posts:[]},me:null,ready:false,postError:''};
+  menuFor:null,itemId:null,customEx:{},aiOpen:{},remote:{threads:[],posts:[]},me:null,ready:false,postError:'',composing:false,panelOpen:true,bodyLevel:'all',bodyQuery:'',bodyMineOnly:false,bodyOpen:{}};
 
 /* ---------- helpers ---------- */
 const fmtDate=d=>new Date(d+'T12:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'});
@@ -263,14 +263,67 @@ function bodyRow(id,nested=false){
   return `<div class="row ${nested?'nested':''}"><div><button class="linkish" data-act="body" data-id="${id}">${esc(b.name)}</button>
     <div class="muted small">${esc(b.about)}</div></div><span>${badge}</span></div>`;
 }
+const LEVEL_ORDER=['fed','federal','state','county','city','school'];
+const LEVEL_NAME={fed:'Federal',federal:'Federal',state:'State',county:'County',city:'City',school:'School'};
+const levelName=l=>LEVEL_NAME[l]||(l?l.charAt(0).toUpperCase()+l.slice(1):'Other');
+const topBodies=()=>Object.keys(BODIES).filter(b=>!BODIES[b].parent&&BODIES[b].kind!=='community');
+const bodyLevels=()=>[...new Set(topBodies().map(b=>BODIES[b].level||''))]
+  .sort((x,y)=>((LEVEL_ORDER.indexOf(x)+1)||99)-((LEVEL_ORDER.indexOf(y)+1)||99));
+const childBodies=id=>Object.keys(BODIES).filter(c=>BODIES[c].parent===id);
+function bodyMatches(id,q){
+  if(!q) return true;
+  const hay=[BODIES[id].name,BODIES[id].about,...childBodies(id).map(c=>BODIES[c].name)].join(' ').toLowerCase();
+  return hay.includes(q);
+}
+// One card per body. It opens in place: next meeting, where and when it meets, districts, and subcommittees.
+function bodyCardHtml(id){
+  const b=BODIES[id], key='body:'+id, open=!!state.bodyOpen[id];
+  const mine=inScope(key), kids=childBodies(id);
+  const nextMeet=MEETINGS.filter(m=>m.body===id&&!isPast(m)).sort(byAsc);
+  const threads=boardFor(key).threads.length;
+  const districts=Object.keys(DIST).filter(p=>DIST[p].body===id);
+  const schedule=b.schedule&&!/^not stated/i.test(b.schedule)?b.schedule:'Meeting times are on the official page.';
+  const nextLine=nextMeet.length?`Next: ${fmtDate(nextMeet[0].date)}, ${nextMeet[0].time}`:'No upcoming meeting listed';
+  return `<article class="bcard ${open?'open':''}">
+    <div class="bcard-head">
+      <div class="bcard-main">
+        <p class="eyebrow">${esc(kindLabel(b))}${mine?' · <span class="tag ok">Your area</span>':''}</p>
+        <h3><button class="linkish" data-act="bopen" data-id="${esc(id)}" aria-expanded="${open}" aria-controls="bd-${esc(id)}">${esc(b.name)}</button></h3>
+        <p class="muted small">${esc(b.about)}</p>
+        <p class="small"><b>${esc(nextLine)}</b> · ${threads} thread${threads===1?'':'s'}</p>
+      </div>
+      <div class="bcard-act">${starBtn(key)}</div>
+    </div>
+    ${open?`<div class="bcard-body" id="bd-${esc(id)}">
+      <p class="small"><b>Meets:</b> ${esc(schedule)}</p>
+      ${b.where?`<p class="small"><b>Where:</b> ${esc(b.where)}</p>`:''}
+      ${nextMeet.slice(0,3).map(m=>`<p class="small"><button class="linkish" data-act="meeting" data-id="${esc(m.id)}">${esc(m.title)}</button> · ${esc(fmtDate(m.date))}</p>`).join('')}
+      ${kids.length?`<p class="small"><b>Subcommittees:</b> ${kids.map(c=>`<button class="linkish" data-act="body" data-id="${esc(c)}">${esc(BODIES[c].name)}</button>`).join(', ')}</p>`:''}
+      ${districts.length?`<p class="small"><b>Districts:</b> ${districts.map(p=>esc(DIST[p].label)+' ('+esc(DIST[p].rep)+')').join(', ')}</p>`:''}
+      <div class="bar"><button data-act="board" data-key="${esc(key)}">Open discussion</button><button class="ghost" data-act="body" data-id="${esc(id)}">Full page</button>${b.source?`<a href="${esc(b.source)}" target="_blank" rel="noopener noreferrer">Official page</a>`:''}</div>
+    </div>`:''}
+  </article>`;
+}
+function bodyListHtml(){
+  const q=state.bodyQuery.trim().toLowerCase();
+  const ids=topBodies().filter(id=>(state.bodyLevel==='all'||BODIES[id].level===state.bodyLevel)
+    &&(!state.bodyMineOnly||inScope('body:'+id))&&bodyMatches(id,q));
+  ids.sort((x,y)=>(Number(inScope('body:'+y))-Number(inScope('body:'+x)))||BODIES[x].name.localeCompare(BODIES[y].name));
+  return ids.length?ids.map(bodyCardHtml).join(''):'<p class="muted">No bodies match. Try another search or clear the filters.</p>';
+}
 function viewBodies(){
-  const levels=['Federal','State','County','City','School'];
-  const intro='<div class="card"><h1>Your bodies</h1><p class="muted">The governing bodies that represent you. Each one has meetings, agenda items, and a discussion board.</p><p class="muted small">'+esc(DATA_NOTICE)+'</p></div>';
-  return intro+levels.map(level=>{
-    const ids=Object.keys(BODIES).filter(b=>BODIES[b].level.toLowerCase()===level.toLowerCase()&&!BODIES[b].parent&&BODIES[b].kind!=='community');
-    if(!ids.length) return '';
-    return `<div class="card"><h2>${esc(level)}</h2>${ids.map(id=>bodyRow(id)+Object.keys(BODIES).filter(c=>BODIES[c].parent===id).map(c=>bodyRow(c,true)).join('')).join('')}</div>`;
-  }).join('');
+  const chips=[['all','All']].concat(bodyLevels().map(l=>[l,levelName(l)]))
+    .map(([v,l])=>`<button class="chip" aria-pressed="${state.bodyLevel===v}" data-act="blevel" data-id="${esc(v)}">${esc(l)}</button>`).join('');
+  return `<section class="card"><h1>Your bodies</h1>
+    <p class="muted">The governing bodies that represent you. Open one to see its next meeting, where it meets, and its districts. Most of this happens on this page.</p>
+    <p class="muted small">${esc(DATA_NOTICE)}</p></section>
+    <div class="bodies-tools">
+      <label for="bodyq" class="small">Search bodies</label>
+      <input id="bodyq" value="${esc(state.bodyQuery)}" placeholder="For example, budget or council" autocomplete="off">
+      <div class="chips" role="group" aria-label="Filter by level">${chips}</div>
+      <button class="chip" aria-pressed="${state.bodyMineOnly}" data-act="bmine" ${state.addr?'':'disabled title="Set your address first"'}>Only my area</button>
+    </div>
+    <div id="body-list">${bodyListHtml()}</div>`;
 }
 
 // Join vs follow. Follow: anyone can follow any board. Join: your address puts you in the district, so you can post there.
@@ -292,18 +345,55 @@ function districtSection(p){
     <div class="dist-act"><button class="linkish" data-act="board" data-key="${esc(key)}">Open board →</button>${starBtn(key)}</div>
   </div>`;
 }
+// The new-thread form. It is hidden until someone presses Start a thread. Used on the board page and in the body panel.
+function threadFormHtml(k){
+  const dt=state.drafts['newtitle:'+k]||'', db=state.drafts['newbody:'+k]||'', dk=state.drafts['newkind:'+k]||'question';
+  return `<h2>Start a thread</h2>
+      <label for="nt" class="small">Title</label>
+      <input id="nt" data-draft="newtitle:${esc(k)}" value="${esc(dt)}" placeholder="What do you want to talk about?" autocomplete="off">
+      <label for="nk" class="small" style="display:block;margin-top:8px">Type</label>
+      <select id="nk" data-draft="newkind:${esc(k)}">${KINDS.map(([v,l])=>`<option value="${v}" ${v===dk?'selected':''}>${esc(l)}</option>`).join('')}</select>
+      <label for="nb" class="small" style="display:block;margin-top:8px">Your post</label>
+      <textarea id="nb" rows="3" data-draft="newbody:${esc(k)}">${esc(db)}</textarea>
+      <div class="err" id="newerr" role="alert"></div>
+      <div class="bar"><button data-act="newthread" data-key="${esc(k)}">Post thread</button><button class="ghost" data-act="compose">Cancel</button></div>`;
+}
+// The body's discussion board, on the right of its page. It collapses to a slim tab.
+function discussionPanelHtml(key){
+  const open=state.panelOpen, post=canPost(key);
+  const threads=boardFor(key).threads.slice().sort((x,y)=>threadLast(y).localeCompare(threadLast(x)));
+  const list=threads.length?threads.map(t=>`<div class="thread"><button class="linkish" data-act="thread" data-key="${esc(key)}" data-id="${esc(t.id)}">${esc(t.title)}</button>
+      <div class="muted small">${esc(KIND_LABEL[t.kind])} · ${t.posts.length} post${t.posts.length===1?'':'s'} · last activity ${esc(fmtShort(threadLast(t)))}</div></div>`).join('')
+    :'<p class="muted small">No threads yet.</p>';
+  const composer=!post
+    ? '<p class="muted small">You can read and follow this board. Only people in districts this body covers can post.</p>'
+    : state.composing
+      ? `<div class="composer">${threadFormHtml(key)}</div>`
+      : '<div class="bar"><button data-act="compose">Start a thread</button></div>';
+  return `<aside class="disc-panel ${open?'':'collapsed'}" aria-label="Discussion board">
+    <button class="panel-toggle" data-act="panel" aria-expanded="${open}" aria-controls="disc-body" title="${open?'Collapse':'Expand'} the discussion">
+      <span aria-hidden="true">${open?'›':'‹'}</span><span>Discussion</span><span class="panel-count">${threads.length}</span>
+    </button>
+    <div id="disc-body" class="panel-body" ${open?'':'hidden'}>
+      <div class="bar" style="margin-top:0"><button class="ghost" data-act="board" data-key="${esc(key)}">Open full board</button>${starBtn(key)}</div>
+      ${composer}
+      <h3 class="panel-h">Threads</h3>
+      ${list}
+    </div>
+  </aside>`;
+}
 function viewBody(){
   const b=BODIES[state.bodyId];
   const ms=MEETINGS.filter(m=>m.body===state.bodyId);
   const key='body:'+state.bodyId;
   const up=ms.filter(m=>!isPast(m)).sort(byAsc), prev=ms.filter(isPast).sort(byDesc);
   const districts=Object.keys(DIST).filter(p=>DIST[p].body===state.bodyId);
-  const threads=boardFor(key).threads;
   const schedule=b.schedule&&!/^not stated/i.test(b.schedule)?b.schedule:'Meeting times are on the official page.';
   const src=b.source
     ? `<p class="muted small">Source: <a href="${esc(b.source)}" target="_blank" rel="noopener">official page</a>, checked ${esc(b.checked||'')}. Verify before relying on it.</p>`
     : '<p class="muted small">Sample or not yet checked. Verify before relying on it.</p>';
-  return `<div id="newerr" class="err" role="alert"></div>
+  return `<div class="body-layout ${state.panelOpen?'':'collapsed'}">
+    <div class="body-main">
     <section class="card">
       <button class="ghost" data-act="page" data-id="bodies" style="margin-bottom:14px">← Back to bodies</button>
       <p class="eyebrow">${esc(kindLabel(b))}${inScope(key)?' · In your area':''}</p>
@@ -315,12 +405,6 @@ function viewBody(){
       ${b.where?`<p class="small"><b>Where:</b> ${esc(b.where)}</p>`:''}
       ${src}
     </section>
-    <section class="card zone-community"><p class="zone-label">Residents</p><h2>Discussion</h2>
-      <p class="small">Ask questions and share views about this body's work. ${threads.length} thread${threads.length===1?'':'s'} so far.</p>
-      <div class="bar"><button data-act="board" data-key="${esc(key)}">Open discussion board</button>
-        ${starBtn(key)}</div>
-      ${canPost(key)?'':'<p class="muted small">You can read and follow this board. Only people in districts this body covers can post.</p>'}
-    </section>
     <section class="card zone-official"><p class="zone-label">Official record</p><h2>Upcoming meetings</h2>
       ${up.length?listMeetings(up):'<p class="muted">No upcoming meetings listed on the checked calendar.</p>'}</section>
     <section class="card zone-official"><h2>Previous meetings</h2>
@@ -328,7 +412,10 @@ function viewBody(){
     <section class="card"><h2>Districts</h2>
       <p class="muted small">Each seat represents one district. You can read every district board. You can post only in your own.</p>
       <div class="dist-list">${districts.map(districtSection).join('')}</div>
-    </section>`;
+    </section>
+    </div>
+    ${discussionPanelHtml(key)}
+  </div>`;
 }
 
 function viewMeetings(){
@@ -543,17 +630,8 @@ function viewBoard(){
   const list=threads.length?threads.map(t=>`<div class="thread"><button class="linkish" data-act="thread" data-key="${esc(f)}" data-id="${t.id}">${esc(t.title)}</button>
       <div class="bar" style="margin-top:4px"><span class="tag">${esc(KIND_LABEL[t.kind])}</span><span class="muted small">${t.posts.length} post${t.posts.length===1?'':'s'} · last activity ${esc(fmtShort(threadLast(t)))}</span></div></div>`).join('')
     :`<p class="muted">No threads yet.${post?' Start the first one below.':''}</p>`;
-  const dt=state.drafts['newtitle:'+f]||'', db=state.drafts['newbody:'+f]||'', dk=state.drafts['newkind:'+f]||'question';
   const form=post
-    ? `<div class="card"><h2>Start a thread</h2>
-      <label for="nt" class="small">Title</label>
-      <input id="nt" data-draft="newtitle:${esc(f)}" value="${esc(dt)}" placeholder="What do you want to talk about?" autocomplete="off">
-      <label for="nk" class="small" style="display:block;margin-top:8px">Type</label>
-      <select id="nk" data-draft="newkind:${esc(f)}">${KINDS.map(([v,l])=>`<option value="${v}" ${v===dk?'selected':''}>${esc(l)}</option>`).join('')}</select>
-      <label for="nb" class="small" style="display:block;margin-top:8px">Your post</label>
-      <textarea id="nb" rows="3" data-draft="newbody:${esc(f)}">${esc(db)}</textarea>
-      <div class="err" id="newerr"></div>
-      <div style="margin-top:6px"><button data-act="newthread" data-key="${esc(f)}">Post thread</button></div></div>`
+    ? `<div class="card">${state.composing?threadFormHtml(f):'<button data-act="compose">Start a thread</button>'}</div>`
     : `<div class="card"><h2>Read only</h2><p class="muted">You can read and follow this board. Posting is limited to people whose districts cover it.</p></div>`;
   return `<div class="card">${backLink(f)}
       <span class="tag">${esc(info.scope)}</span> ${joinTag(f)}
@@ -697,7 +775,7 @@ async function boot(){
   state.navOpen=window.matchMedia('(min-width:761px)').matches;
   state.ready=true;
   render();
-}function go(page,extra={}){Object.assign(state,{page},extra);if(window.matchMedia('(max-width:760px)').matches) state.navOpen=false;render();}
+}function go(page,extra={}){Object.assign(state,{page,composing:false},extra);if(window.matchMedia('(max-width:760px)').matches) state.navOpen=false;render();}
 
 /* ---------- events ---------- */
 document.addEventListener('click',e=>{
@@ -726,7 +804,7 @@ document.addEventListener('click',e=>{
       if(posted){ delete state.drafts['aifb:'+key]; }
     });
   }
-  if(act==='meetthread'){const m=findMeeting(id);state.drafts['newtitle:body:'+m.body]=fmtShort(m.date)+' meeting: ';return go('board',{boardKey:'body:'+m.body,threadId:null});}
+  if(act==='meetthread'){const m=findMeeting(id);state.drafts['newtitle:body:'+m.body]=fmtShort(m.date)+' meeting: ';return go('board',{boardKey:'body:'+m.body,threadId:null,composing:true});}
 
 
   if(act==='exskip'){state.drafts[exKey(key,id)]='';return render();}
@@ -737,6 +815,11 @@ document.addEventListener('click',e=>{
   if(act==='board'){ if(key&&key.startsWith('item:')) return go('item',{itemId:key.slice(5),threadId:null}); return go('board',{boardKey:key,threadId:null}); }
   if(act==='thread') return go('thread',{boardKey:key,threadId:id});
 
+  if(act==='compose'){state.composing=!state.composing;render();if(state.composing)document.getElementById('nt')?.focus();return;}
+  if(act==='panel'){state.panelOpen=!state.panelOpen;render();document.querySelector('[data-act="panel"]')?.focus();return;}
+  if(act==='blevel'){state.bodyLevel=id;return render();}
+  if(act==='bmine'){state.bodyMineOnly=!state.bodyMineOnly;return render();}
+  if(act==='bopen'){state.bodyOpen[id]=!state.bodyOpen[id];render();document.querySelector(`[data-act="bopen"][data-id="${id}"]`)?.focus();return;}
   if(act==='newthread') return postNewThread(key);
   if(act==='reply') return postReply(key,id);
 });
@@ -744,6 +827,7 @@ document.addEventListener('input',e=>{
   if(e.target.id==='username') state.user=e.target.value;
   if(e.target.id==='q'){state.query=e.target.value;const r=document.getElementById('results');if(r) r.innerHTML=findResults();}
   if(e.target.id==='bq'){state.boardQuery=e.target.value;const r=document.getElementById('board-list');if(r) r.innerHTML=boardsHtml();}
+  if(e.target.id==='bodyq'){state.bodyQuery=e.target.value;const r=document.getElementById('body-list');if(r) r.innerHTML=bodyListHtml();}
   if(e.target.dataset.draft) state.drafts[e.target.dataset.draft]=e.target.value;
 });
 document.addEventListener('change',e=>{
