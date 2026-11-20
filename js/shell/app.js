@@ -706,12 +706,8 @@ function sidebarBody(){
     
     <div class="navgroup"><div class="navhead">Government</div>${item('bodies','Bodies','building')}</div>
     <div class="navgroup"><div class="navhead">Talk</div>${item('boards','Discussions','chat')}</div>`;
-  const districts=state.addr
-    ? `<div class="sidebox"><h2>Districts shown</h2>${WORKING.map(l=>`<label class="tg"><input type="checkbox" data-act="toggle" data-id="${l}" ${state.toggles[l]?'checked':''}><span><b>${esc(LEVEL_LABEL[l])}</b><br><span class="muted small">${esc(DIST[state.addr.d[l]].label)}</span></span></label>`).join('')}
-        <p class="muted small">Show meetings and boards for each area. State and U.S. House info pages are not working yet.</p></div>`
-    : `<div class="sidebox"><p class="muted small">No address set. Use Find my districts.</p></div>`;
   const menuIcon='<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>';
-  return `<div class="brand"><span>Civic Lens</span><button class="drawer-close" data-act="nav" aria-label="Close menu" title="Close menu">${menuIcon}</button></div>${nav}${districts}`;
+  return `<div class="brand"><span>Civic Lens</span><button class="drawer-close" data-act="nav" aria-label="Close menu" title="Close menu">${menuIcon}</button></div>${nav}`;
 }
 
 function viewApp(){
