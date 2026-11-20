@@ -310,12 +310,31 @@ function bodyListHtml(){
   ids.sort((x,y)=>(Number(inScope('body:'+y))-Number(inScope('body:'+x)))||BODIES[x].name.localeCompare(BODIES[y].name));
   return ids.length?ids.map(bodyCardHtml).join(''):'<p class="muted">No bodies match. Try another search or clear the filters.</p>';
 }
+// One card per district you live in: who represents it, what body it belongs to, its next meeting, and its board.
+function yourDistrictsHtml(){
+  if(!state.addr) return '';
+  const cards=Object.entries(state.addr.d).filter(([,p])=>DIST[p]&&BODIES[DIST[p].body]).map(([level,p])=>{
+    const d=DIST[p], body=BODIES[d.body], key='place:'+p;
+    const next=MEETINGS.filter(m=>m.body===d.body&&!isPast(m)).sort(byAsc)[0];
+    const role=d.note?d.note.replace(/\.$/,''):'';
+    return `<article class="dcard">
+      <p class="eyebrow">${esc(LEVEL_LABEL[level]||level)}</p>
+      <h3>${esc(d.label)}</h3>
+      <p class="small"><b>${esc(d.rep||'Representative not listed')}</b> represents you on ${esc(body.name)}</p>
+      ${role?`<p class="muted small">${esc(role)}</p>`:''}
+      <p class="small">${next?`Next meeting: ${esc(fmtDate(next.date))}, ${esc(next.time)}`:'No upcoming meeting listed'}</p>
+      <div class="bar"><button data-act="board" data-key="${esc(key)}">Open district board</button><button class="ghost" data-act="body" data-id="${esc(d.body)}">Body page</button>${starBtn(key)}</div>
+    </article>`;
+  });
+  return cards.length?`<section class="card"><h2>Your districts</h2><p class="muted small">The seats that represent your address. Each one has its own board.</p><div class="dcards">${cards.join('')}</div></section>`:'';
+}
 function viewBodies(){
   const chips=[['all','All']].concat(bodyLevels().map(l=>[l,levelName(l)]))
     .map(([v,l])=>`<button class="chip" aria-pressed="${state.bodyLevel===v}" data-act="blevel" data-id="${esc(v)}">${esc(l)}</button>`).join('');
   return `<section class="card"><h1>Your bodies</h1>
     <p class="muted">The governing bodies that represent you. Open one to see its next meeting, where it meets, and its districts. Most of this happens on this page.</p>
     <p class="muted small">${esc(DATA_NOTICE)}</p></section>
+    ${yourDistrictsHtml()}
     <div class="bodies-tools">
       <label for="bodyq" class="small">Search bodies</label>
       <input id="bodyq" value="${esc(state.bodyQuery)}" placeholder="For example, budget or council" autocomplete="off">
@@ -359,26 +378,29 @@ function threadFormHtml(k,{heading='Start a thread',submit='Post thread',kinds=K
       <div class="bar"><button data-act="newthread" data-key="${esc(k)}">${esc(submit)}</button><button class="ghost" data-act="compose">Cancel</button></div>`;
 }
 // The body's discussion board, on the right of its page. It collapses to a slim tab.
-function discussionPanelHtml(key){
+// The discussion panel beside a body or a meeting. A meeting passes its own threads and a start button that stays on the page.
+function discussionPanelHtml(key,{threads:given=null,meetingId=null,note='',startLabel='Start a thread',formOpts={}}={}){
   const open=state.panelOpen, post=canPost(key);
-  const threads=boardFor(key).threads.slice().sort((x,y)=>threadLast(y).localeCompare(threadLast(x)));
+  const threads=(given||boardFor(key).threads).slice().sort((x,y)=>threadLast(y).localeCompare(threadLast(x)));
   const list=threads.length?threads.map(t=>`<div class="thread"><button class="linkish" data-act="thread" data-key="${esc(key)}" data-id="${esc(t.id)}">${esc(t.title)}</button>
       <div class="muted small">${esc(KIND_LABEL[t.kind])} · ${t.posts.length} post${t.posts.length===1?'':'s'} · last activity ${esc(fmtShort(threadLast(t)))}</div></div>`).join('')
     :'<p class="muted small">No threads yet.</p>';
+  const start=meetingId
+    ? `<button data-act="meetthread" data-id="${esc(meetingId)}">Start a thread about this meeting</button>`
+    : `<button data-act="compose">${esc(startLabel)}</button>`;
   const composer=!post
     ? '<p class="muted small">You can read and follow this board. Only people in districts this body covers can post.</p>'
-    : state.composing
-      ? `<div class="composer">${threadFormHtml(key)}</div>`
-      : '<div class="bar"><button data-act="compose">Start a thread</button></div>';
-  return `<aside class="disc-panel ${open?'':'collapsed'}" aria-label="Discussion board">
+    : state.composing ? `<div class="composer">${threadFormHtml(key,formOpts)}</div>` : `<div class="bar">${start}</div>`;
+  return `<aside class="disc-panel ${open?'':'collapsed'}" aria-label="Discussion">
     <button class="panel-toggle" data-act="panel" aria-expanded="${open}" aria-controls="disc-body" title="${open?'Collapse':'Expand'} the discussion">
       <span aria-hidden="true">${open?'›':'‹'}</span><span>Discussion</span><span class="panel-count">${threads.length}</span>
     </button>
     <div id="disc-body" class="panel-body" ${open?'':'hidden'}>
-      <div class="bar" style="margin-top:0"><button class="ghost" data-act="board" data-key="${esc(key)}">Open full board</button>${starBtn(key)}</div>
+      ${note?`<p class="muted small">${esc(note)}</p>`:''}
       ${composer}
       <h3 class="panel-h">Threads</h3>
       ${list}
+      <div class="bar"><button class="ghost" data-act="board" data-key="${esc(key)}">Open full board</button>${starBtn(key)}</div>
     </div>
   </aside>`;
 }
@@ -388,31 +410,33 @@ function viewBody(){
   const key='body:'+state.bodyId;
   const up=ms.filter(m=>!isPast(m)).sort(byAsc), prev=ms.filter(isPast).sort(byDesc);
   const districts=Object.keys(DIST).filter(p=>DIST[p].body===state.bodyId);
+  const yours=districts.filter(p=>mine(p)), others=districts.filter(p=>!mine(p));
   const schedule=b.schedule&&!/^not stated/i.test(b.schedule)?b.schedule:'Meeting times are on the official page.';
   const src=b.source
     ? `<p class="muted small">Source: <a href="${esc(b.source)}" target="_blank" rel="noopener">official page</a>, checked ${esc(b.checked||'')}. Verify before relying on it.</p>`
     : '<p class="muted small">Sample or not yet checked. Verify before relying on it.</p>';
   return `<div class="body-layout ${state.panelOpen?'':'collapsed'}">
     <div class="body-main">
-    <section class="card">
-      <button class="ghost" data-act="page" data-id="bodies" style="margin-bottom:14px">← Back to bodies</button>
-      <p class="eyebrow">${esc(kindLabel(b))}${inScope(key)?' · In your area':''}</p>
-      <h1>${esc(b.name)}</h1>
-      <p>${esc(BODY_PLAIN[state.bodyId]||b.about)}</p>
-    </section>
-    <section class="card zone-official"><p class="zone-label">About this body</p><h2>Meetings and where</h2>
-      <p class="small"><b>Meets:</b> ${esc(schedule)}</p>
-      ${b.where?`<p class="small"><b>Where:</b> ${esc(b.where)}</p>`:''}
-      ${src}
-    </section>
-    <section class="card zone-official"><p class="zone-label">Official record</p><h2>Upcoming meetings</h2>
-      ${up.length?listMeetings(up):'<p class="muted">No upcoming meetings listed on the checked calendar.</p>'}</section>
-    <section class="card zone-official"><h2>Previous meetings</h2>
-      ${prev.length?listMeetings(prev.slice(0,2)):'<p class="muted">No previous meetings listed on the checked calendar.</p>'}</section>
-    <section class="card"><h2>Districts</h2>
-      <p class="muted small">Each seat represents one district. You can read every district board. You can post only in your own.</p>
-      <div class="dist-list">${districts.map(districtSection).join('')}</div>
-    </section>
+      <section class="card">
+        <button class="ghost" data-act="page" data-id="bodies" style="margin-bottom:14px">← Back to bodies</button>
+        <p class="eyebrow">${esc(kindLabel(b))}${inScope(key)?' · In your area':''}</p>
+        <h1>${esc(b.name)}</h1>
+        <p>${esc(BODY_PLAIN[state.bodyId]||b.about)}</p>
+      </section>
+      <section class="card zone-plain"><p class="zone-label">About</p><h2>Meets and where</h2>
+        <p class="small"><b>Meets:</b> ${esc(schedule)}</p>
+        ${b.where?`<p class="small"><b>Where:</b> ${esc(b.where)}</p>`:''}
+        ${src}
+      </section>
+      ${yours.length?`<section class="card zone-yours"><p class="zone-label">Your district</p><h2>${yours.length>1?'Your districts':'Your district'}</h2>
+        <div class="dist-list">${yours.map(districtSection).join('')}</div></section>`:''}
+      <section class="card zone-official"><p class="zone-label">Official record</p><h2>Upcoming meetings</h2>
+        ${up.length?listMeetings(up):'<p class="muted">No upcoming meetings listed on the checked calendar.</p>'}</section>
+      <details class="card fold"><summary><h2>Previous meetings (${prev.length})</h2></summary>
+        ${prev.length?listMeetings(prev.slice(0,5)):'<p class="muted">No previous meetings listed on the checked calendar.</p>'}</details>
+      ${others.length?`<details class="card fold"><summary><h2>Other districts (${others.length})</h2></summary>
+        <p class="muted small">Each seat represents one district. You can read every district board. You can post only in your own.</p>
+        <div class="dist-list">${others.map(districtSection).join('')}</div></details>`:''}
     </div>
     ${discussionPanelHtml(key)}
   </div>`;
@@ -452,7 +476,7 @@ function viewMeeting(){
   const tl=threads.length?threads.map(th=>`<div class="brow"><div class="brow-main">${kindTag('discussion')}<button class="linkish" data-act="thread" data-key="body:${esc(m.body)}" data-id="${esc(th.id)}">${esc(th.title)}</button>
       <div class="muted small">${th.posts.length} post${th.posts.length===1?'':'s'} · last post ${esc(fmtShort(threadLast(th)))}</div></div></div>`).join('')
     :'<p class="muted">No threads about this meeting yet.</p>';
-  return `<div id="newerr" class="err" role="alert"></div><section class="card">
+  return `<div class="body-layout ${state.panelOpen?'':'collapsed'}"><div class="body-main">${state.composing?'':'<div id="newerr" class="err" role="alert"></div>'}<section class="card">
       <button class="ghost" data-act="page" data-id="meetings" style="margin-bottom:14px">← Back to meetings</button>
       <p class="eyebrow">${esc(b.name)}</p>
       <h1>${esc(m.title)}</h1>
@@ -467,10 +491,8 @@ function viewMeeting(){
       <p class="muted small">${m.source?`Source: <a href="${esc(m.source)}" target="_blank" rel="noopener">City Clerk meetings calendar</a>, checked ${esc(m.checked||'')}. Verify before relying on it.`:'Sample schedule and agenda for this prototype. Not from an official source.'}</p></section>
     <section class="card zone-official"><h2>Agenda</h2><p class="muted small">Open an item for its full summary, who decides, and residents' explanations.</p>
       ${items?`<ol class="agenda">${items}</ol>`:'<p class="muted">Agenda items have not been loaded for this meeting yet.</p>'}</section>
-    <section class="card zone-community"><p class="zone-label">Residents</p><h2>Meeting discussion</h2>
-      <p class="muted small">Threads about the whole meeting are on the ${esc(b.name)} board.</p>
-      ${tl}
-      <div class="bar"><button class="ghost" data-act="meetthread" data-id="${m.id}">Start a thread about this meeting</button></div></section>`;
+    </div>${discussionPanelHtml('body:'+m.body,{threads,meetingId:m.id,note:'Threads about this meeting are on the '+b.name+' board.'})}
+  </div>`;
 }
 
 
@@ -485,10 +507,10 @@ function boardsHtml(){
   }).join('')||'<div class="card"><p class="muted">No boards match that search.</p></div>';
 }
 function viewBoards(){
-  const keys=feedKeys().filter(k=>!/^(item|meet|thread):/.test(k)).sort((a,b)=>boardStats(b).last.localeCompare(boardStats(a).last));
-  const list=keys.length?keys.map(boardRow).join(''):'<p class="muted">You have not saved any boards yet. Tap the star on a body, district, or topic and it appears here.</p>';
-  return `<div class="card"><h1>Your discussions</h1><p class="muted">The boards you follow, most recent activity first.</p>${list}
-    <div class="bar" style="margin-top:12px"><button class="ghost" data-act="page" data-id="allboards">See all boards</button></div></div>`;
+  const keys=feedKeys().filter(k=>!/^(item|meet|thread):/.test(k)).sort((x,y)=>boardStats(y).last.localeCompare(boardStats(x).last));
+  const list=keys.length?keys.map(boardRow).join('')
+    :'<p class="muted">Nothing starred yet. Open a body or district and press the star. It appears here.</p><div class="bar"><button data-act="page" data-id="bodies">Browse bodies</button></div>';
+  return `<div class="card"><h1>Starred discussions</h1><p class="muted">Only the discussions you have starred, most recent activity first.</p>${list}</div>`;
 }
 function viewAllBoards(){
   return `<div class="card"><button class="ghost" data-act="page" data-id="boards" style="margin-bottom:10px">← Your boards</button>
@@ -584,7 +606,7 @@ function viewItem(){
         ? `<div class="composer">${threadFormHtml(k,{heading:'Start a comment',submit:'Post comment',kinds:COMMENT_KINDS,withErr:false})}</div>`
         : '<div class="bar"><button data-act="compose">Start a comment</button></div>')
     : '';
-  return `<div id="newerr" class="err" role="alert"></div>
+  return `<div class="body-layout ${state.panelOpen?'':'collapsed'}"><div class="body-main">${state.composing?'':'<div id="newerr" class="err" role="alert"></div>'}
     <section class="card">
       <button class="ghost" data-act="meeting" data-id="${m.id}" style="margin-bottom:14px">← Back to the ${esc(fmtDate(m.date))} meeting</button>
       <p class="eyebrow">${esc(BODIES[m.body].name)} · ${esc(m.title)} · ${fmtDate(m.date)}</p>
@@ -602,11 +624,8 @@ function viewItem(){
       <p class="muted small">Residents' plain-language explanations. Each one links to its official source.</p>
       ${exList}
       ${explainBlock}</section>
-    <section class="card zone-community"><p class="zone-label">Residents</p><h2>Comments</h2>
-      <p class="muted small">Questions and opinions about this item.</p>
-      ${comList}
-      
-      ${commentBlock}</section>`;
+    </div>${discussionPanelHtml(k,{threads:com,startLabel:'Start a comment',note:'Questions and opinions about this item. Explanations are on the left.',formOpts:{heading:'Start a comment',submit:'Post comment',kinds:COMMENT_KINDS}})}
+  </div>`;
 }
 
 function viewExplain(){
@@ -846,7 +865,7 @@ document.addEventListener('click',e=>{
       if(posted){ delete state.drafts['aifb:'+key]; }
     });
   }
-  if(act==='meetthread'){const m=findMeeting(id);state.drafts['newtitle:body:'+m.body]=fmtShort(m.date)+' meeting: ';return go('board',{boardKey:'body:'+m.body,threadId:null,composing:true});}
+  if(act==='meetthread'){const m=findMeeting(id);state.drafts['newtitle:body:'+m.body]=fmtShort(m.date)+' meeting: ';state.composing=true;render();document.getElementById('nt')?.focus();return;}
 
 
   if(act==='exskip'){state.drafts[exKey(key,id)]='';return render();}

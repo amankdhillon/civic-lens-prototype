@@ -272,3 +272,21 @@ details.flag summary{cursor:pointer;color:var(--navy);font-weight:600;padding:6p
 .ai-fold>summary .zone-label{margin-right:8px}
 .more{margin-top:12px}
 .composer{margin-top:12px;padding:14px;background:var(--soft);border-radius:8px}
+
+/* Your districts on the bodies page */
+.dcards{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;margin-top:12px}
+.dcard{border:1px solid var(--line);border-radius:8px;padding:14px;background:#fff}
+.dcard h3{margin:2px 0 6px;font-size:18px}
+.dcard .bar{margin-top:10px}
+
+/* Sections on the body and item pages: each kind of content has its own rule and label */
+.zone-plain{border-left:3px solid var(--line);padding-left:16px}
+.zone-plain .zone-label{color:var(--mute)}
+.zone-yours{border-left:3px solid var(--ok);padding-left:16px}
+.zone-yours .zone-label{color:var(--ok)}
+details.fold{border-bottom:1px solid var(--line)}
+details.fold>summary{cursor:pointer;list-style:none;padding:4px 0 14px}
+details.fold>summary::-webkit-details-marker{display:none}
+details.fold>summary::before{content:'▸ ';color:var(--navy);font-size:14px}
+details.fold[open]>summary::before{content:'▾ '}
+details.fold>summary h2{display:inline;font-size:18px}
